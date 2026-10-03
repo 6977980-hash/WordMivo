@@ -122,7 +122,7 @@ class Seo {
 	}
 
 	private static function verification(): void {
-		$gsc = get_option( 'wordmivo_gsc_verification', '' );
+		$gsc = get_option( 'wordmivo_gsc_verification', GSC_DEFAULT );
 		if ( $gsc ) {
 			printf( '<meta name="google-site-verification" content="%s">' . "\n", esc_attr( $gsc ) );
 		}

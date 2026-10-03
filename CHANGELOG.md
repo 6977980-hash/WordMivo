@@ -20,3 +20,7 @@
 - Wordle solver: best starting words, best next guesses by expected remaining answers, hard mode.
 - Shareable links for finder, solver and rack tools (URL updates as you search) + Copy link button.
 - Standard pages refresh automatically when unedited. Admin notice asks for one re-import after this update.
+
+## 0.2.1 — 2026-10-03
+- Search Console verification meta for wordmivo.com set by default.
+- Ad slots (AdSense): invisible and zero-cost while ads are off; when on, reserved height (no layout shift), lazy-loaded script, unfilled slots collapse, automatic /ads.txt. Settings in Tools > WordMivo.

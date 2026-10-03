@@ -67,7 +67,20 @@ class Admin {
 
 		$ga4 = strtoupper( sanitize_text_field( wp_unslash( $_POST['ga4'] ?? '' ) ) );
 		update_option( 'wordmivo_ga4_id', preg_match( '/^G-[A-Z0-9]+$/', $ga4 ) ? $ga4 : '' );
-		update_option( 'wordmivo_gsc_verification', sanitize_text_field( wp_unslash( $_POST['gsc'] ?? '' ) ) );
+		// Accept either the bare code or the whole <meta ... content="..."> tag.
+		$gsc = wp_unslash( $_POST['gsc'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
+		if ( preg_match( '/content=["\']([^"\']+)/', $gsc, $m ) ) {
+			$gsc = $m[1];
+		}
+		update_option( 'wordmivo_gsc_verification', sanitize_text_field( $gsc ) );
+
+		update_option( 'wordmivo_ads_enabled', empty( $_POST['ads_enabled'] ) ? 0 : 1 );
+		$client = sanitize_text_field( wp_unslash( $_POST['adsense_client'] ?? '' ) );
+		update_option( 'wordmivo_adsense_client', preg_match( '/^ca-pub-\d{10,20}$/', $client ) ? $client : '' );
+		foreach ( array_keys( Ads::POSITIONS ) as $pos ) {
+			$slot = sanitize_text_field( wp_unslash( $_POST[ 'ad_slot_' . $pos ] ?? '' ) );
+			update_option( 'wordmivo_ad_slot_' . $pos, preg_match( '/^\d{6,20}$/', $slot ) ? $slot : '' );
+		}
 
 		$answer = strtolower( sanitize_text_field( wp_unslash( $_POST['wordle_answer'] ?? '' ) ) );
 		if ( '' === $answer || preg_match( '/^[a-z]{5}$/', $answer ) ) {
@@ -127,7 +140,15 @@ class Admin {
 			<tr><th scope="row">Home page</th><td><label><input type="checkbox" name="home_finder" value="1" <?php checked( get_option( 'wordmivo_home_finder', 1 ) ); ?>> Show the 5-letter word finder as the home page</label></td></tr>
 			<tr><th scope="row"><label for="wm-wordle">Today's Wordle answer</label></th><td><input id="wm-wordle" name="wordle_answer" type="text" maxlength="5" value="<?php echo esc_attr( get_option( 'wordmivo_wordle_answer', '' ) ); ?>"> <span class="description">Saved for today's date (<?php echo esc_html( current_time( 'Y-m-d' ) ); ?>). Hints page shows it hidden behind a reveal.</span></td></tr>
 			<tr><th scope="row"><label for="wm-ga4">GA4 measurement ID</label></th><td><input id="wm-ga4" name="ga4" type="text" placeholder="G-XXXXXXX" value="<?php echo esc_attr( get_option( 'wordmivo_ga4_id', '' ) ); ?>"> <span class="description">Loads only after cookie consent.</span></td></tr>
-			<tr><th scope="row"><label for="wm-gsc">Search Console verification code</label></th><td><input id="wm-gsc" name="gsc" type="text" class="regular-text" value="<?php echo esc_attr( get_option( 'wordmivo_gsc_verification', '' ) ); ?>"></td></tr>
+			<tr><th scope="row">Ads (AdSense)</th><td>
+				<label style="display:block"><input type="checkbox" name="ads_enabled" value="1" <?php checked( get_option( 'wordmivo_ads_enabled', 0 ) ); ?>> Show ads</label>
+				<p><label>Publisher ID <input name="adsense_client" type="text" placeholder="ca-pub-1234567890123456" value="<?php echo esc_attr( get_option( 'wordmivo_adsense_client', '' ) ); ?>"></label></p>
+				<?php foreach ( Ads::POSITIONS as $pos => $label ) : ?>
+					<p><label><?php echo esc_html( $label ); ?> slot ID <input name="ad_slot_<?php echo esc_attr( $pos ); ?>" type="text" inputmode="numeric" placeholder="1234567890" value="<?php echo esc_attr( get_option( 'wordmivo_ad_slot_' . $pos, '' ) ); ?>"></label></p>
+				<?php endforeach; ?>
+				<p class="description">While "Show ads" is off, nothing is added to pages. When on, each slot keeps its space reserved so the page does not jump, and AdSense loads only when a slot is near the screen. ads.txt is served automatically at /ads.txt.</p>
+			</td></tr>
+			<tr><th scope="row"><label for="wm-gsc">Search Console verification code</label></th><td><input id="wm-gsc" name="gsc" type="text" class="regular-text" value="<?php echo esc_attr( get_option( 'wordmivo_gsc_verification', GSC_DEFAULT ) ); ?>"></td></tr>
 		</table>
 		<?php submit_button(); ?>
 	</form>

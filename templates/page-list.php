@@ -56,6 +56,7 @@ get_header();
 	</p>
 
 	<?php echo Shortcodes::finder( array( 'length' => $len ) ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in the shortcode. ?>
+	<?php echo Ads::slot( 'top' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 
 	<?php if ( $words['common'] ) : ?>
 	<section class="wm-section" aria-labelledby="wm-common">
@@ -67,6 +68,8 @@ get_header();
 		</ul>
 	</section>
 	<?php endif; ?>
+
+	<?php echo $words['common'] && $words['all'] ? Ads::slot( 'middle' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 
 	<?php if ( $words['all'] ) : ?>
 	<section class="wm-section" aria-labelledby="wm-all">
@@ -98,6 +101,8 @@ get_header();
 		<p>Results update as you type. "Common first" sorts by how often a word appears in real English text, so likely Wordle answers rise to the top. Switch to "Scrabble score" to find high-scoring plays.</p>
 	</section>
 	<?php endif; ?>
+
+	<?php echo Ads::slot( 'bottom' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 
 	<?php $faq = Pages::faq( $spec ); ?>
 	<?php if ( $faq ) : ?>

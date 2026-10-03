@@ -57,6 +57,7 @@ get_header();
 	<h1><?php echo esc_html( Pages::heading( $spec ) ); ?></h1>
 	<p class="wm-lead"><?php echo esc_html( $c['intro'] ); ?></p>
 	<?php echo do_shortcode( $c['tool'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- shortcode output is escaped. ?>
+	<?php echo Ads::slot( 'top' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 	<section class="wm-section wm-prose">
 		<h2>How it works</h2>
 		<ol>
@@ -66,6 +67,7 @@ get_header();
 		</ol>
 		<p><?php echo esc_html( $c['more'] ); ?></p>
 	</section>
+	<?php echo Ads::slot( 'bottom' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 	<?php foreach ( Pages::related( $spec ) as $label => $links ) : ?>
 	<nav class="wm-section wm-related" aria-label="<?php echo esc_attr( $label ); ?>">
 		<h2><?php echo esc_html( $label ); ?></h2>
