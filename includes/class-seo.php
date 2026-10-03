@@ -23,6 +23,9 @@ class Seo {
 		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_llms' ) ) );
 		add_action( 'template_redirect', array( __CLASS__, 'llms_txt' ), 0 );
 		add_action( 'send_headers', array( __CLASS__, 'security_headers' ) );
+		add_action( 'init', static fn() => add_rewrite_rule( '^BingSiteAuth\\.xml$', 'index.php?wm_bing_auth=1', 'top' ) );
+		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_bing_auth' ) ) );
+		add_action( 'template_redirect', array( __CLASS__, 'bing_auth' ), 0 );
 		add_action( 'wp_footer', array( __CLASS__, 'analytics' ), 99 );
 
 		// Our own canonical is printed for virtual pages.
@@ -336,6 +339,18 @@ class Seo {
 			self::person(),
 		);
 		echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $graph ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "</script>\n";
+	}
+
+	/** /BingSiteAuth.xml: Bing's file verification method, same code as the meta tag. */
+	public static function bing_auth(): void {
+		if ( ! get_query_var( 'wm_bing_auth' ) ) {
+			return;
+		}
+		$code = (string) get_option( 'wordmivo_bing_verification', BING_DEFAULT );
+		status_header( $code ? 200 : 404 );
+		header( 'Content-Type: application/xml; charset=utf-8' );
+		echo '<?xml version="1.0"?>' . "\n" . '<users>' . "\n\t" . '<user>' . esc_html( $code ) . '</user>' . "\n" . '</users>' . "\n";
+		exit;
 	}
 
 	public static function robots_txt( string $output, $is_public ): string {

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.2
+- /BingSiteAuth.xml served from the Bing code (Bing's XML-file verification method).
+
 ## 0.4.1
 - Bing Webmaster Tools verification meta (msvalidate.01), default code set, editable in Tools > WordMivo.
 
