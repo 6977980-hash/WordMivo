@@ -321,18 +321,36 @@ class Pages {
 	 */
 	public static function words( array $spec ): array {
 		global $wpdb;
-		$table  = words_table();
-		$where  = self::where( $spec );
-		$common = $wpdb->get_results( $wpdb->prepare( "SELECT word, scrabble_score AS score, freq_rank AS rank_n FROM {$table} WHERE {$where} AND freq_rank <= %d ORDER BY freq_rank LIMIT 60", self::COMMON_RANK ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$all    = 'hub' === $spec['type'] ? array() : $wpdb->get_results( $wpdb->prepare( "SELECT word, scrabble_score AS score FROM {$table} WHERE {$where} ORDER BY word LIMIT %d", self::LIST_CAP ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$total  = 'hub' === $spec['type'] ? self::count_live( $spec ) : self::count( $spec );
-		$ncommon = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where} AND freq_rank <= %d", self::COMMON_RANK ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$table   = words_table();
+		$where   = self::where( $spec );
+		$common  = self::common_sql( $spec );
+		$top     = $wpdb->get_results( "SELECT word, scrabble_score AS score, is_likely FROM {$table} WHERE {$where} AND {$common} ORDER BY freq_rank LIMIT 60" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$all     = 'hub' === $spec['type'] ? array() : $wpdb->get_results( $wpdb->prepare( "SELECT word, scrabble_score AS score, is_likely FROM {$table} WHERE {$where} ORDER BY word LIMIT %d", self::LIST_CAP ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$total   = 'hub' === $spec['type'] ? self::count_live( $spec ) : self::count( $spec );
+		$ncommon = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where} AND {$common}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return array(
-			'common'   => $common,
+			'common'   => $top,
 			'all'      => $all,
 			'total'    => $total,
 			'n_common' => $ncommon,
+			'likely'   => 5 === (int) $spec['len'],
 		);
+	}
+
+	/**
+	 * "Common" means likely Wordle answers for 5 letters, otherwise frequent dictionary words.
+	 * Falls back to frequency alone when the dictionary has not been imported.
+	 */
+	private static function common_sql( array $spec ): string {
+		global $wpdb;
+		static $has_valid = null;
+		if ( null === $has_valid ) {
+			$has_valid = (bool) $wpdb->get_var( 'SELECT 1 FROM ' . words_table() . ' WHERE is_valid = 1 LIMIT 1' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		if ( ! $has_valid ) {
+			return $wpdb->prepare( 'freq_rank <= %d', self::COMMON_RANK );
+		}
+		return 5 === (int) $spec['len'] ? 'is_likely = 1' : $wpdb->prepare( 'is_valid = 1 AND freq_rank <= %d', self::COMMON_RANK );
 	}
 
 	/** Most frequent letter at a 1-based position among the spec's words. */
@@ -423,7 +441,7 @@ class Pages {
 		$ex    = implode( ', ', array_slice( wp_list_pluck( $words['common'], 'word' ), 0, 5 ) );
 		$faq   = array();
 		if ( 'hub' === $spec['type'] ) {
-			$faq[] = array( "How many {$n} letter words are there?", "WordMivo's list has {$total} {$n}-letter English words. {$words['n_common']} of them are common everyday words." );
+			$faq[] = array( "How many {$n} letter words are there?", "WordMivo's list has {$total} {$n}-letter English words. {$words['n_common']} of them are " . ( 5 === $n ? 'likely Wordle answers (common dictionary words that are not plurals or past tenses).' : 'common everyday words.' ) );
 			if ( $ex ) {
 				$faq[] = array( "What are the most common {$n} letter words?", "The most common {$n}-letter words in English include {$ex}." );
 			}
@@ -434,7 +452,7 @@ class Pages {
 			$faq[] = array( 'Are all these words valid in Wordle and Scrabble?', 'Not always. Our list is broad and includes rare words. Each game uses its own dictionary, so common words shown first are the safest picks.' );
 		} elseif ( 'tool' !== $spec['type'] ) {
 			$phrase = self::phrase( $spec );
-			$faq[]  = array( 'How many ' . $phrase . ' are there?', "There are {$total} {$phrase} in WordMivo's list, of which {$words['n_common']} are common words." );
+			$faq[]  = array( 'How many ' . $phrase . ' are there?', "There are {$total} {$phrase} in WordMivo's list, of which {$words['n_common']} are " . ( 5 === $n ? 'likely Wordle answers.' : 'common words.' ) );
 			if ( $ex ) {
 				$faq[] = array( 'What are common ' . $phrase . '?', "Common {$phrase} include {$ex}." );
 			}

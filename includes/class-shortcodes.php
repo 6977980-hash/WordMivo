@@ -87,8 +87,16 @@ class Shortcodes {
 			<?php endfor; ?>
 		</div>
 	</fieldset>
+	<fieldset class="wm-known">
+		<legend>In the word, but not in this spot (yellow)</legend>
+		<div class="wm-boxes">
+			<?php for ( $i = 0; $i < $len; $i++ ) : ?>
+				<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="5" class="wm-box wm-notat" name="y<?php echo esc_attr( $i ); ?>" aria-label="<?php echo esc_attr( 'Letters not in position ' . ( $i + 1 ) ); ?>">
+			<?php endfor; ?>
+		</div>
+	</fieldset>
 	<div class="wm-row">
-		<label>Must contain (yellow)
+		<label>Must contain (anywhere)
 			<input type="text" name="include" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="<?php echo esc_attr( $len ); ?>" value="<?php echo esc_attr( $prefill['include'] ); ?>" placeholder="e.g. ae">
 		</label>
 		<label>Exclude (gray)
@@ -102,9 +110,13 @@ class Shortcodes {
 			</select>
 		</label>
 	</div>
+	<?php if ( 5 === $len ) : ?>
+		<label class="wm-check"><input type="checkbox" name="likely" value="1"> Only likely Wordle answers</label>
+	<?php endif; ?>
 	<div class="wm-actions">
 		<button type="submit" class="wm-btn">Find words</button>
 		<button type="reset" class="wm-btn wm-btn-ghost">Reset</button>
+		<button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button>
 	</div>
 	<div class="wm-results" aria-live="polite"></div>
 </form>
@@ -117,7 +129,7 @@ class Shortcodes {
 		ob_start();
 		?>
 <div class="wm-tool wm-wordle" data-wm="wordle" data-src="<?php echo esc_attr( json_url( 5 ) ); ?>">
-	<p class="wm-help">Type each guess, then tap a tile to set its colour: gray, yellow, green.</p>
+	<p class="wm-help">Type each guess, then tap a tile to set its colour: gray, yellow, green. Press the button with no guesses to see the best starting words.</p>
 	<div class="wm-grid" role="group" aria-label="Your guesses">
 		<?php for ( $r = 0; $r < 6; $r++ ) : ?>
 			<div class="wm-guess" data-row="<?php echo esc_attr( $r ); ?>">
@@ -130,7 +142,9 @@ class Shortcodes {
 	<div class="wm-actions">
 		<button type="button" class="wm-btn" data-action="solve">Show possible answers</button>
 		<button type="button" class="wm-btn wm-btn-ghost" data-action="clear">Clear</button>
+		<button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button>
 	</div>
+	<label class="wm-check"><input type="checkbox" name="hard" value="1"> Hard mode (only suggest words that could be the answer)</label>
 	<div class="wm-results" aria-live="polite"></div>
 </div>
 		<?php
@@ -150,7 +164,7 @@ class Shortcodes {
 	<label><?php echo esc_html( $labels[ $mode ][0] ); ?>
 		<input type="text" name="letters" required minlength="2" maxlength="<?php echo esc_attr( MAX_RACK ); ?>" pattern="[A-Za-z?]{2,15}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="<?php echo 'rack' === $mode ? 'e.g. retains?' : 'e.g. listen'; ?>">
 	</label>
-	<div class="wm-actions"><button type="submit" class="wm-btn"><?php echo esc_html( $labels[ $mode ][1] ); ?></button></div>
+	<div class="wm-actions"><button type="submit" class="wm-btn"><?php echo esc_html( $labels[ $mode ][1] ); ?></button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>
 	<div class="wm-results" aria-live="polite"></div>
 </form>
 		<?php

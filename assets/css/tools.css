@@ -24,3 +24,8 @@
 .wm-hints ol{padding-left:1.2em}
 .wm-hints summary,.wm-reveal summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
 .wm-answer{font-size:2rem;font-weight:800;letter-spacing:.2em}
+.wm-words li.wm-likely{box-shadow:inset 3px 0 0 var(--wm-g)}
+.wm-check{flex-direction:row!important;align-items:center;gap:8px!important;min-height:44px}
+.wm-check input{width:20px;height:20px;margin:0}
+.wm-copied{color:var(--wm-g);font-weight:600;align-self:center}
+.wm-tool .wm-notat{font-size:1rem;text-transform:lowercase;font-weight:600}

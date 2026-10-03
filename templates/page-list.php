@@ -43,12 +43,13 @@ get_header();
 		} else {
 			$top2 = strtoupper( Pages::top_letter_at( $spec, 'starts' === $spec['type'] ? strlen( $spec['x'] ) + 1 : 1 ) );
 			printf(
-				'There are <strong>%1$s</strong> %2$s in our word list. %3$s of them are common English words%4$s. %5$s',
+				'There are <strong>%1$s</strong> %2$s in our word list. %3$s of them are %6$s%4$s. %5$s',
 				esc_html( number_format_i18n( $total ) ),
 				esc_html( Pages::phrase( $spec ) ),
 				esc_html( number_format_i18n( $words['n_common'] ) ),
 				$examples ? esc_html( ', such as ' . implode( ', ', $examples ) ) : '',
-				$top2 ? esc_html( sprintf( 'The most frequent %s letter is %s.', 'starts' === $spec['type'] ? 'next' : 'first', $top2 ) ) : ''
+				$top2 ? esc_html( sprintf( 'The most frequent %s letter is %s.', 'starts' === $spec['type'] ? 'next' : 'first', $top2 ) ) : '',
+				$words['likely'] ? 'likely Wordle answers' : 'common English words'
 			);
 		}
 		?>
@@ -58,7 +59,7 @@ get_header();
 
 	<?php if ( $words['common'] ) : ?>
 	<section class="wm-section" aria-labelledby="wm-common">
-		<h2 id="wm-common"><?php echo esc_html( $is_hub ? "Most common {$len} letter words" : 'Most common words' ); ?></h2>
+		<h2 id="wm-common"><?php echo esc_html( $words['likely'] ? ( $is_hub ? 'Likely Wordle answers' : 'Likely Wordle answers on this list' ) : ( $is_hub ? "Most common {$len} letter words" : 'Most common words' ) ); ?></h2>
 		<ul class="wm-words wm-words-common">
 			<?php foreach ( $words['common'] as $w ) : ?>
 				<li><?php echo esc_html( $w->word ); ?><sub><?php echo esc_html( $w->score ); ?></sub></li>
@@ -70,10 +71,10 @@ get_header();
 	<?php if ( $words['all'] ) : ?>
 	<section class="wm-section" aria-labelledby="wm-all">
 		<h2 id="wm-all"><?php echo esc_html( sprintf( 'All %s %s (A to Z)', number_format_i18n( $total ), Pages::phrase( $spec ) ) ); ?></h2>
-		<p class="wm-note">Numbers show the Scrabble score.</p>
+		<p class="wm-note">Numbers show the Scrabble score.<?php echo $words['likely'] ? ' Words with a green bar are likely Wordle answers.' : ''; ?></p>
 		<ul class="wm-words">
 			<?php foreach ( $words['all'] as $w ) : ?>
-				<li><?php echo esc_html( $w->word ); ?><sub><?php echo esc_html( $w->score ); ?></sub></li>
+				<li<?php echo $w->is_likely ? ' class="wm-likely"' : ''; ?>><?php echo esc_html( $w->word ); ?><sub><?php echo esc_html( $w->score ); ?></sub></li>
 			<?php endforeach; ?>
 		</ul>
 		<?php if ( $total > count( $words['all'] ) ) : ?>

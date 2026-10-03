@@ -16,10 +16,16 @@ class Importer {
 
 	const WORDS_FILE = 'words_alpha.txt';
 	const FREQ_FILE  = 'count_1w.txt';
+	const DICT_FILE  = 'enable1.txt';
+	const LIKELY_MAX_RANK = 40000;
 	const STATE      = 'wordmivo_import_state';
 
 	public static function words_path(): string {
 		return trailingslashit( WORDMIVO_DATA_DIR ) . self::WORDS_FILE;
+	}
+
+	public static function dict_path(): string {
+		return trailingslashit( WORDMIVO_DATA_DIR ) . self::DICT_FILE;
 	}
 
 	public static function freq_path(): string {
@@ -112,8 +118,15 @@ class Importer {
 			case 'words':
 				$state = self::step_words( $state, $batch );
 				break;
+			case 'valid':
+				$state = self::step_valid( $state, $batch );
+				break;
 			case 'ranks':
 				$state = self::step_ranks( $state, $batch );
+				break;
+			case 'likely':
+				$state['likely'] = self::mark_likely();
+				$state['stage']  = 'json';
 				break;
 			case 'json':
 				self::write_json();
@@ -143,18 +156,7 @@ class Importer {
 			if ( ! is_valid_word( $word ) ) {
 				continue;
 			}
-			$rows[] = $wpdb->prepare(
-				'(%s,%d,%s,%s,%s,%d,%d,%d,%d)',
-				$word,
-				strlen( $word ),
-				$word[0],
-				substr( $word, -1 ),
-				signature( $word ),
-				letter_mask( $word ),
-				vowel_count( $word ),
-				has_repeat( $word ) ? 1 : 0,
-				scrabble_score( $word )
-			);
+			$rows[] = self::row_sql( $word, 0 );
 		}
 		$state['offset'] = ftell( $fh );
 		$eof             = feof( $fh );
@@ -163,8 +165,63 @@ class Importer {
 		if ( $rows ) {
 			$table = words_table();
 			// Values are prepared above; INSERT IGNORE keeps re-imports idempotent.
-			$wpdb->query( "INSERT IGNORE INTO {$table} (word,len,first_letter,last_letter,signature,letter_mask,vowels,has_double,scrabble_score) VALUES " . implode( ',', $rows ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( 'INSERT IGNORE INTO ' . $table . ' ' . self::COLUMNS . ' VALUES ' . implode( ',', $rows ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			$state['done'] += count( $rows );
+		}
+		if ( $eof || 0 === $read ) {
+			$state['stage']  = 'valid';
+			$state['offset'] = 0;
+		}
+		return $state;
+	}
+
+	const COLUMNS = '(word,len,first_letter,last_letter,signature,letter_mask,vowels,has_double,scrabble_score,is_valid)';
+
+	private static function row_sql( string $word, int $valid ): string {
+		global $wpdb;
+		return $wpdb->prepare(
+			'(%s,%d,%s,%s,%s,%d,%d,%d,%d,%d)',
+			$word,
+			strlen( $word ),
+			$word[0],
+			substr( $word, -1 ),
+			signature( $word ),
+			letter_mask( $word ),
+			vowel_count( $word ),
+			has_repeat( $word ) ? 1 : 0,
+			scrabble_score( $word ),
+			$valid
+		);
+	}
+
+	/**
+	 * ENABLE (public domain Scrabble-style dictionary): flags words as valid and adds
+	 * valid words missing from the main list.
+	 */
+	private static function step_valid( array $state, int $batch ): array {
+		global $wpdb;
+		if ( ! is_readable( self::dict_path() ) ) {
+			$state['stage'] = 'ranks';
+			return $state;
+		}
+		$fh = fopen( self::dict_path(), 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		fseek( $fh, (int) $state['offset'] );
+		$rows = array();
+		$read = 0;
+		while ( $read < $batch && false !== ( $line = fgets( $fh ) ) ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition
+			++$read;
+			$word = strtolower( trim( $line ) );
+			if ( is_valid_word( $word ) ) {
+				$rows[] = self::row_sql( $word, 1 );
+			}
+		}
+		$state['offset'] = ftell( $fh );
+		$eof             = feof( $fh );
+		fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+
+		if ( $rows ) {
+			$table = words_table();
+			$wpdb->query( 'INSERT INTO ' . $table . ' ' . self::COLUMNS . ' VALUES ' . implode( ',', $rows ) . ' ON DUPLICATE KEY UPDATE is_valid = 1' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
 		if ( $eof || 0 === $read ) {
 			$state['stage']  = 'ranks';
@@ -174,12 +231,37 @@ class Importer {
 	}
 
 	/**
+	 * Our own estimate of likely Wordle-style answers: five-letter dictionary words
+	 * that are common in English and are not a simple plural or past tense.
+	 */
+	public static function mark_likely(): int {
+		global $wpdb;
+		$table = words_table();
+		$valid = array_flip( $wpdb->get_col( "SELECT word FROM {$table} WHERE is_valid = 1 AND len BETWEEN 3 AND 5" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$cands = $wpdb->get_col( $wpdb->prepare( "SELECT word FROM {$table} WHERE len = 5 AND is_valid = 1 AND freq_rank <= %d", self::LIKELY_MAX_RANK ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$likely = array();
+		foreach ( $cands as $w ) {
+			$plural = str_ends_with( $w, 's' ) && ! str_ends_with( $w, 'ss' ) && ( isset( $valid[ substr( $w, 0, -1 ) ] ) || ( str_ends_with( $w, 'es' ) && isset( $valid[ substr( $w, 0, -2 ) ] ) ) );
+			$past   = str_ends_with( $w, 'ed' ) && ( isset( $valid[ substr( $w, 0, -2 ) ] ) || isset( $valid[ substr( $w, 0, -1 ) ] ) );
+			if ( ! $plural && ! $past ) {
+				$likely[] = $w;
+			}
+		}
+		$wpdb->query( "UPDATE {$table} SET is_likely = 0 WHERE is_likely = 1" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		foreach ( array_chunk( $likely, 1000 ) as $chunk ) {
+			$in = implode( ',', array_map( static fn( $w ) => $wpdb->prepare( '%s', $w ), $chunk ) );
+			$wpdb->query( "UPDATE {$table} SET is_likely = 1 WHERE word IN ({$in})" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+		return count( $likely );
+	}
+
+	/**
 	 * Frequency file lines are "word<TAB>count" (or just "word"); rank = line number.
 	 */
 	private static function step_ranks( array $state, int $batch ): array {
 		global $wpdb;
 		if ( ! is_readable( self::freq_path() ) ) {
-			$state['stage'] = 'json';
+			$state['stage'] = 'likely';
 			return $state;
 		}
 		$fh = fopen( self::freq_path(), 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
@@ -209,7 +291,7 @@ class Importer {
 			$state['ranked'] += (int) $wpdb->query( "UPDATE {$table} SET freq_rank = CASE word " . implode( ' ', $cases ) . " END WHERE word IN ({$in}) AND freq_rank IS NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 		if ( $eof || 0 === $read ) {
-			$state['stage']  = 'json';
+			$state['stage']  = 'likely';
 			$state['offset'] = 0;
 		}
 		return $state;
@@ -233,10 +315,11 @@ class Importer {
 		}
 		for ( $len = MIN_LEN; $len <= MAX_LEN; $len++ ) {
 			$rows = $wpdb->get_results(
-				$wpdb->prepare( "SELECT word, scrabble_score, freq_rank FROM {$table} WHERE len = %d ORDER BY freq_rank IS NULL, freq_rank, word", $len ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->prepare( "SELECT word, scrabble_score, freq_rank, is_valid + 2 * is_likely FROM {$table} WHERE len = %d ORDER BY is_likely DESC, is_valid DESC, freq_rank IS NULL, freq_rank, word", $len ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				ARRAY_N
 			);
-			$data = array_map( static fn( $r ) => array( $r[0], (int) $r[1], (int) $r[2] ), $rows );
+			// [word, score, rank (0 = unranked), flags: 1 = dictionary word, 2 = likely answer].
+			$data = array_map( static fn( $r ) => array( $r[0], (int) $r[1], (int) $r[2], (int) $r[3] ), $rows );
 			$json = wp_json_encode( $data );
 			$hash = substr( md5( $json ), 0, 10 );
 			$name = "words-{$len}.{$hash}.json";
@@ -254,6 +337,7 @@ class Importer {
 		$sources = array(
 			array( 'dwyl/english-words (words_alpha.txt)', 'https://github.com/dwyl/english-words', 'Unlicense', self::words_path() ),
 			// License copied as unverified on purpose: check the source page before stating one.
+			array( 'ENABLE word list (enable1.txt)', 'https://github.com/dolph/dictionary', 'Public domain', self::dict_path() ),
 			array( 'Peter Norvig word frequencies (count_1w.txt)', 'https://norvig.com/ngrams/', 'UNVERIFIED', self::freq_path() ),
 		);
 		foreach ( $sources as $s ) {

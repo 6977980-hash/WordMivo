@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Installer {
 
-	const DB_VERSION = '1';
+	const DB_VERSION = '2';
 
 	public static function activate(): void {
 		self::create_tables();
@@ -28,7 +28,7 @@ class Installer {
 		if ( ! get_option( 'wordmivo_cleanup_done' ) ) {
 			self::cleanup_first_deploy();
 		}
-		if ( ! get_option( 'wordmivo_pages_created' ) ) {
+		if ( PAGES_VERSION !== (string) get_option( 'wordmivo_pages_created' ) ) {
 			add_action( 'init', __NAMESPACE__ . '\\create_standard_pages', 20 );
 		}
 		if ( get_option( 'wordmivo_db_version' ) !== self::DB_VERSION ) {
@@ -69,6 +69,8 @@ class Installer {
   has_double tinyint(1) NOT NULL DEFAULT 0,
   scrabble_score smallint(5) unsigned NOT NULL DEFAULT 0,
   freq_rank int(10) unsigned DEFAULT NULL,
+  is_valid tinyint(1) NOT NULL DEFAULT 0,
+  is_likely tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY  (id),
   UNIQUE KEY uq_word (word),
   KEY idx_len_rank (len,freq_rank),

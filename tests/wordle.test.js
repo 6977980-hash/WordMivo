@@ -31,3 +31,19 @@ assert.deepStrictEqual(wordleCandidates(words, [['eerie', fb]]).map((w) => w[0])
 passed++;
 
 console.log(`wordle tests: ${passed} passed`);
+
+// Yellow letters: present, but not at the given positions.
+const y = require('../assets/js/wordmivo.js').finderFilter(['', '', '', '', ''], '', '', ['', 'r', '', '', '']);
+assert.strictEqual(y('crane'), false); // r at position 2
+assert.strictEqual(y('rates'), true);
+assert.strictEqual(y('plate'), false); // no r
+
+// Share-link encoding round trip.
+const { encodeGuesses, decodeGuesses, bestGuesses } = require('../assets/js/wordmivo.js');
+const rows = [['crane', ['gray', 'green', 'yellow', 'gray', 'green']]];
+assert.strictEqual(encodeGuesses(rows), 'crane02102');
+assert.deepStrictEqual(decodeGuesses('crane02102.bad'), rows);
+
+// Best guess splits the answers; with 2 answers it returns them.
+assert.deepStrictEqual(bestGuesses(['crane', 'crate'], ['crane', 'crate'], 5), ['crane', 'crate']);
+console.log('extra tests passed');

@@ -39,10 +39,12 @@ HTML,
 			'content' => <<<HTML
 <p>This page explains where WordMivo's words come from and how we sort them, so you know what you are looking at.</p>
 <h2>Word source</h2>
-<p>Our word list is based on the open-source <a href="https://github.com/dwyl/english-words" rel="nofollow">dwyl/english-words</a> list (released under the Unlicense). It contains about 370,000 English words. We keep only words made of the letters a to z, which leaves about 359,000 words.</p>
+<p>Our word list is based on the open-source <a href="https://github.com/dwyl/english-words" rel="nofollow">dwyl/english-words</a> list (released under the Unlicense). It contains about 370,000 English words. We add the public-domain <a href="https://github.com/dolph/dictionary" rel="nofollow">ENABLE</a> word list, the dictionary behind many Scrabble-style games, and keep only words made of the letters a to z. That gives about 380,000 words. Words found in ENABLE are treated as dictionary words and shown before others.</p>
 <p>Because this list is very broad, it includes some rare, old or specialised words. That is useful for word games, but it also means not every word is accepted by every game. Wordle, Scrabble and other games each use their own dictionaries.</p>
 <h2>How "common words" are chosen</h2>
 <p>We rank words using Peter Norvig's word frequency list (<a href="https://norvig.com/ngrams/" rel="nofollow">count_1w.txt</a>), which counts how often words appear across a very large sample of English web text. A word is marked common if it is among the 20,000 most frequent words. On every list, common words are shown first; the full list follows in A to Z order.</p>
+<h2>Likely Wordle answers</h2>
+<p>Wordle answers are everyday words, and the game rarely uses plurals or past tenses as answers. So we mark a five-letter word as a likely answer when it is in the ENABLE dictionary, is among the 40,000 most frequent English words, and is not a simple plural (like "cats") or past tense (like "baked"). This gives about 2,100 words. It is our own estimate, not the official Wordle list, so treat it as a strong hint rather than a guarantee.</p>
 <h2>Scrabble scores</h2>
 <p>The number next to each word is its base Scrabble score using standard English tile values, before any board bonuses. In the Scrabble word finder, blank tiles score zero, as in the game.</p>
 <h2>Wordle solver logic</h2>
@@ -110,43 +112,53 @@ HTML,
 	);
 }
 
+const PAGES_VERSION = '2';
+
 /**
- * Create missing pages once. Never overwrites a page someone has published or edited,
- * except WordPress's own unpublished privacy-policy draft.
+ * Create missing pages, and refresh pages we created earlier as long as nobody has
+ * edited them since (tracked by a content hash). Published pages edited by a person
+ * are never touched. WordPress's own unpublished privacy-policy draft is replaced.
  */
 function create_standard_pages(): array {
 	$log = array();
 	foreach ( standard_pages() as $slug => $page ) {
 		$existing = get_page_by_path( $slug, OBJECT, 'page' );
-		if ( $existing && 'publish' === $existing->post_status ) {
-			$log[] = "kept {$slug}";
-			continue;
-		}
-		$data = array(
+		$data     = array(
 			'post_type'    => 'page',
 			'post_status'  => 'publish',
 			'post_name'    => $slug,
 			'post_title'   => $page['title'],
 			'post_content' => $page['content'],
 		);
-		if ( $existing && 'privacy-policy' === $slug ) {
+		if ( $existing ) {
+			$ours      = get_post_meta( $existing->ID, '_wordmivo_hash', true );
+			// Pages from v0.1.1 have no hash; treat them as ours if never edited since creation.
+			$legacy    = ! $ours && 'publish' === $existing->post_status && $existing->post_modified_gmt === $existing->post_date_gmt;
+			$unchanged = ( $ours && md5( $existing->post_content ) === $ours ) || $legacy;
+			$wp_draft  = 'privacy-policy' === $slug && 'publish' !== $existing->post_status && ! $ours;
+			if ( ! $unchanged && ! $wp_draft ) {
+				$log[] = "kept {$slug}";
+				continue;
+			}
+			if ( $existing->post_content === $page['content'] ) {
+				update_post_meta( $existing->ID, '_wordmivo_hash', md5( $existing->post_content ) );
+				$log[] = "up to date {$slug}";
+				continue;
+			}
 			$data['ID'] = $existing->ID;
-			wp_update_post( $data );
-			$log[] = "replaced draft {$slug}";
-		} elseif ( $existing ) {
-			$log[] = "kept unpublished {$slug}";
-			continue;
+			$id         = wp_update_post( $data );
+			$log[]      = "updated {$slug}";
 		} else {
-			wp_insert_post( $data );
+			$id    = wp_insert_post( $data );
 			$log[] = "created {$slug}";
 		}
-		if ( 'privacy-policy' === $slug ) {
-			$id = get_page_by_path( $slug, OBJECT, 'page' )->ID ?? 0;
-			if ( $id ) {
+		if ( $id && ! is_wp_error( $id ) ) {
+			update_post_meta( $id, '_wordmivo_hash', md5( get_post( $id )->post_content ) );
+			if ( 'privacy-policy' === $slug ) {
 				update_option( 'wp_page_for_privacy_policy', $id );
 			}
 		}
 	}
-	update_option( 'wordmivo_pages_created', 1, false );
+	update_option( 'wordmivo_pages_created', PAGES_VERSION, false );
 	return $log;
 }

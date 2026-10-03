@@ -12,3 +12,11 @@
 - Organization schema, OG image (1200x630), favicon, meta description fallback for normal pages.
 - /llms.txt for AI assistants.
 - Site-wide footer links: finders, tools, 5-letter A-Z lists.
+
+## 0.2.0 — 2026-10-03
+- ENABLE dictionary (public domain) flags dictionary words and adds ~21k missing valid words.
+- "Likely Wordle answer" estimate (~2,100 five-letter words: dictionary + common + not plural/past tense), shown first and marked with a green bar; "Only likely answers" filter.
+- Finder: yellow "not in this spot" letters per position.
+- Wordle solver: best starting words, best next guesses by expected remaining answers, hard mode.
+- Shareable links for finder, solver and rack tools (URL updates as you search) + Copy link button.
+- Standard pages refresh automatically when unedited. Admin notice asks for one re-import after this update.

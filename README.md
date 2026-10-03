@@ -9,7 +9,7 @@ Build spec: [`docs/WordMivo_Prompt_v6.md`](docs/WordMivo_Prompt_v6.md).
 ## Install on Hostinger
 
 1. **Deploy:** hPanel → Websites → wordmivo.com → Advanced → GIT. Repository `6977980-hash/WordMivo`, branch `claude/project-thread-cauwph`, directory `public_html/wp-content/plugins/wordmivo-core`, auto-deployment on.
-2. **Word lists:** in File Manager, next to `public_html` (inside `domains/wordmivo.com/`), create `wordmivo-data/` and upload `words_alpha.txt` and `count_1w.txt` (exact names). The plugin finds this folder automatically. To use another folder, add `define( 'WORDMIVO_DATA_DIR', '/full/path' );` to `wp-config.php`.
+2. **Word lists:** `data/` in this repo already holds `words_alpha.txt`, `count_1w.txt` and `enable1.txt` (web access blocked by `.htaccess`), so Git deploy brings them. To use another folder, add `define( 'WORDMIVO_DATA_DIR', '/full/path' );` to `wp-config.php`.
 3. **Activate:** WP Admin → Plugins → activate **WordMivo Core**. Then Appearance → Themes → activate **WordMivo**.
 4. **Permalinks:** Settings → Permalinks → "Post name" → Save.
 5. **Import:** Tools → WordMivo → **Start import** (runs in small batches; keep the tab open). Over SSH instead: `wp wordmivo verify` then `wp wordmivo import`.

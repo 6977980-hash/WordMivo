@@ -17,10 +17,30 @@ class Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_post_wordmivo_save', array( __CLASS__, 'save' ) );
 		add_action( 'wp_ajax_wordmivo_import_batch', array( __CLASS__, 'ajax_import' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'reimport_notice' ) );
 	}
 
 	public static function menu(): void {
 		add_management_page( 'WordMivo', 'WordMivo', 'manage_options', self::SLUG, array( __CLASS__, 'render' ) );
+	}
+
+	/**
+	 * After an update that adds new data (dictionary flags), ask for one re-import.
+	 */
+	public static function reimport_notice(): void {
+		global $wpdb;
+		if ( ! current_user_can( 'manage_options' ) || ! is_readable( Importer::dict_path() ) ) {
+			return;
+		}
+		$table = words_table();
+		$words = (int) $wpdb->get_var( "SELECT COUNT(*) FROM (SELECT 1 FROM {$table} LIMIT 1) t" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$flags = (int) $wpdb->get_var( "SELECT COUNT(*) FROM (SELECT 1 FROM {$table} WHERE is_valid = 1 LIMIT 1) t" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $words && ! $flags ) {
+			printf(
+				'<div class="notice notice-warning"><p><strong>WordMivo:</strong> new word data is available. Go to <a href="%s">Tools &gt; WordMivo</a> and click <strong>Start import</strong> once.</p></div>',
+				esc_url( admin_url( 'tools.php?page=' . self::SLUG ) )
+			);
+		}
 	}
 
 	public static function ajax_import(): void {
@@ -89,7 +109,7 @@ class Admin {
 			<tr><td>Import state</td><td id="wm-import-state"><?php echo esc_html( $state['stage'] ); ?></td></tr>
 		</tbody>
 	</table>
-	<p class="description">Upload <code>words_alpha.txt</code> and <code>count_1w.txt</code> to a <code>wordmivo-data</code> folder next to public_html (found automatically), or set <code>WORDMIVO_DATA_DIR</code> in wp-config.php.</p>
+	<p class="description">Upload <code>words_alpha.txt</code>, <code>count_1w.txt</code> and <code>enable1.txt</code> to a <code>wordmivo-data</code> folder next to public_html (found automatically), or set <code>WORDMIVO_DATA_DIR</code> in wp-config.php.</p>
 	<p><button type="button" class="button button-primary" id="wm-import">Start import</button> <span id="wm-import-log"></span></p>
 	<p class="description">Or over SSH: <code>wp wordmivo import</code></p>
 
