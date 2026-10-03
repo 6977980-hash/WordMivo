@@ -336,9 +336,8 @@ class Importer {
 		$wpdb->query( "DELETE FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$sources = array(
 			array( 'dwyl/english-words (words_alpha.txt)', 'https://github.com/dwyl/english-words', 'Unlicense', self::words_path() ),
-			// License copied as unverified on purpose: check the source page before stating one.
 			array( 'ENABLE word list (enable1.txt)', 'https://github.com/dolph/dictionary', 'Public domain (ENABLE2K by its authors)', self::dict_path() ),
-			array( 'Peter Norvig word frequencies (count_1w.txt)', 'https://norvig.com/ngrams/', 'UNVERIFIED', self::freq_path() ),
+			array( 'Peter Norvig word frequencies (count_1w.txt)', 'https://github.com/norvig/pytudes', 'MIT (norvig/pytudes)', self::freq_path() ),
 		);
 		foreach ( $sources as $s ) {
 			$wpdb->insert(
