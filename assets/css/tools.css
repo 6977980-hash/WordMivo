@@ -55,3 +55,6 @@ span.wm-tile,button.wm-tile{width:40px;height:40px;display:inline-flex;align-ite
 .wm-table-wrap{overflow-x:auto;margin:8px 0 16px}.wm-openers{max-width:none;font-size:.95rem}.wm-openers th{font-size:.8rem}
 .wm-answers{padding-left:1.4em}.wm-answers li{margin:6px 0}.wm-answers a{font-weight:800;letter-spacing:.04em}
 .wm-code{font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line,#cbd5e1);border-radius:8px;background:var(--surface,#f8fafc);color:inherit;margin:6px 0 10px}
+.wm-wotd-word{font-size:2.4rem;font-weight:800;margin:4px 0 8px;letter-spacing:.02em}.wm-wotd-word a{text-decoration:none}
+.wm-wotd-list{list-style:none;padding:0;columns:2 180px}.wm-wotd-list li{min-height:32px}.wm-wotd-list span{color:var(--muted,#64748b);font-size:.85rem;margin-right:6px}
+.wm-downloads{padding-left:1.2em}.wm-downloads li{margin:10px 0}.wm-downloads a{font-weight:700}

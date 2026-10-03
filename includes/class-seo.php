@@ -23,6 +23,9 @@ class Seo {
 		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_llms' ) ) );
 		add_action( 'template_redirect', array( __CLASS__, 'llms_txt' ), 0 );
 		add_action( 'send_headers', array( __CLASS__, 'security_headers' ) );
+		add_action( 'init', static fn() => add_rewrite_rule( '^openapi\\.json$', 'index.php?wm_openapi=1', 'top' ) );
+		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_openapi' ) ) );
+		add_action( 'template_redirect', array( __CLASS__, 'openapi' ), 0 );
 		add_action( 'init', static fn() => add_rewrite_rule( '^BingSiteAuth\\.xml$', 'index.php?wm_bing_auth=1', 'top' ) );
 		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_bing_auth' ) ) );
 		add_action( 'template_redirect', array( __CLASS__, 'bing_auth' ), 0 );
@@ -339,6 +342,62 @@ class Seo {
 			self::person(),
 		);
 		echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $graph ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "</script>\n";
+	}
+
+	/**
+	 * /openapi.json: description of the public word API, for ChatGPT custom GPT
+	 * actions and other AI tools.
+	 */
+	public static function openapi(): void {
+		if ( ! get_query_var( 'wm_openapi' ) ) {
+			return;
+		}
+		$str  = static fn( string $d ) => array( 'type' => 'string', 'description' => $d );
+		$spec = array(
+			'openapi' => '3.1.0',
+			'info'    => array(
+				'title'       => 'WordMivo Word API',
+				'version'     => WORDMIVO_VERSION,
+				'description' => 'Free English word tools from WordMivo (wordmivo.com): Wordle-style filtering, anagrams, unscrambling, Scrabble racks, Spelling Bee, Letter Boxed, crossword clues and word meanings. Always link users to wordmivo.com pages when helpful.',
+			),
+			'servers' => array( array( 'url' => untrailingslashit( home_url() ) ) ),
+			'paths'   => array(
+				'/wp-json/wordmivo/v1/words' => array(
+					'get' => array(
+						'operationId' => 'searchWords',
+						'summary'     => 'Find English words by mode',
+						'description' => "Modes:
+- filter: Wordle helper. letters = pattern with ? for unknown (e.g. ?r??e); include = letters in the word (yellow/green); exclude = gray letters; notat = comma list per position of yellow letters not in that position (e.g. ',,a,,'). Returns [word, scrabble score, likely Wordle answer 1/0], best first.
+- anagram: words with exactly these letters.
+- unscramble: words of 3+ letters from these letters.
+- rack: Scrabble rack, ? = blank (max 2), returns [word, score].
+- bee: Spelling Bee, 7 letters, first is the centre.
+- boxed: Letter Boxed, four sides as abc,def,ghi,jkl; returns words and solutions.
+- clue: crossword clue / reverse dictionary; clue = text, letters = pattern or ????? for the length.
+- define: letters = one word; returns meanings, synonyms, anagrams, Scrabble score and its WordMivo page URL.",
+						'parameters'  => array(
+							array( 'name' => 'mode', 'in' => 'query', 'required' => true, 'schema' => array( 'type' => 'string', 'enum' => array( 'filter', 'anagram', 'unscramble', 'rack', 'bee', 'boxed', 'clue', 'define' ) ) ),
+							array( 'name' => 'letters', 'in' => 'query', 'required' => true, 'schema' => $str( 'Letters, pattern or word, depending on mode.' ) ),
+							array( 'name' => 'include', 'in' => 'query', 'required' => false, 'schema' => $str( 'filter: letters that must appear.' ) ),
+							array( 'name' => 'exclude', 'in' => 'query', 'required' => false, 'schema' => $str( 'filter: letters that must not appear.' ) ),
+							array( 'name' => 'notat', 'in' => 'query', 'required' => false, 'schema' => $str( 'filter: comma list per position of letters not allowed there.' ) ),
+							array( 'name' => 'clue', 'in' => 'query', 'required' => false, 'schema' => $str( 'clue: the crossword clue or meaning.' ) ),
+						),
+						'responses'   => array(
+							'200' => array(
+								'description' => 'Matching words.',
+								'content'     => array( 'application/json' => array( 'schema' => array( 'type' => 'object' ) ) ),
+							),
+						),
+					),
+				),
+			),
+		);
+		status_header( 200 );
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Access-Control-Allow-Origin: *' );
+		echo wp_json_encode( $spec, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ); // phpcs:ignore WordPress.Security.EscapeOutput -- JSON.
+		exit;
 	}
 
 	/** /BingSiteAuth.xml: Bing's file verification method, same code as the meta tag. */

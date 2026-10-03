@@ -54,6 +54,8 @@ class Pages {
 		'best-wordle-starting-words' => 'Best Wordle Starting Words',
 		'crossword-solver'     => 'Crossword Clue Solver',
 		'word-finder-widget'   => 'Free Word Finder Widget',
+		'word-of-the-day'      => 'Word of the Day',
+		'wordle-word-list-download' => 'Wordle Word List Download',
 	);
 
 	/** @var array|null Spec for the current request. */
@@ -208,6 +210,10 @@ class Pages {
 			return;
 		}
 		self::$current = $spec;
+		if ( 'tool' === $spec['type'] && 'word-of-the-day' === $spec['x'] ) {
+			// Changes at local midnight.
+			do_action( 'litespeed_control_set_ttl', max( 300, strtotime( 'tomorrow', current_time( 'timestamp' ) ) - current_time( 'timestamp' ) ) );
+		}
 		if ( 'tool' === $spec['type'] && 'todays-wordle-hints' === $spec['x'] ) {
 			// Daily content: keep LiteSpeed's page cache short.
 			do_action( 'litespeed_control_set_ttl', 900 );
@@ -439,6 +445,8 @@ class Pages {
 				'best-wordle-starting-words' => 'Best Wordle Starting Words, Ranked by Data',
 				'crossword-solver'     => 'Crossword Clue Solver & Reverse Dictionary (Free)',
 				'word-finder-widget'   => 'Free Word Finder & Wordle Solver Widget for Your Website',
+				'word-of-the-day'      => self::wotd_title(),
+				'wordle-word-list-download' => 'Wordle Word List Download: Free CSV Dataset',
 			);
 			return ( $titles[ $spec['x'] ] ?? self::heading( $spec ) ) . ' | WordMivo';
 		}
@@ -472,12 +480,27 @@ class Pages {
 			'wordle-analyzer'      => 'Free Wordle game analysis: enter your guesses and the answer to get a skill and luck score for every guess, and the best guess you could have played.',
 			'spelling-bee-solver'  => 'Enter the seven Spelling Bee letters to see every word, pangrams first, with points for each word.',
 			'letter-boxed-solver'  => 'Enter the 12 Letter Boxed letters side by side to find every playable word and two-word solutions.',
+			'word-of-the-day'      => self::wotd_description(),
+			'wordle-word-list-download' => 'Download free Wordle word lists: all 8,636 five-letter words, 2,141 likely answers and every starting word ranked, as CSV. Free under CC BY 4.0.',
 			'word-finder-widget'   => 'Add a free word finder or Wordle solver to your website or blog: copy one line of code. Fast, ad-free widget that works on phones.',
 			'crossword-solver'     => 'Free crossword clue solver and reverse dictionary: type a clue or a meaning plus the length or known letters (c???e) to find the answer word.',
 			'best-wordle-starting-words' => 'The best Wordle starting words ranked by data: how many answers each opener leaves on average, its worst case, and where CRANE, SLATE and ADIEU rank.',
 			'quordle-solver'       => 'Solve Quordle and Octordle: enter your guesses and colours for each board to see the possible answers and the best next guess for all boards.',
 		);
 		return $map[ $tool ] ?? '';
+	}
+
+	private static function wotd_title(): string {
+		$days = Words::word_of_the_day();
+		$word = reset( $days );
+		return $word ? sprintf( 'Word of the Day: %s (%s)', ucfirst( $word ), wp_date( 'F j, Y', strtotime( (string) key( $days ) ) ) ) : 'Word of the Day';
+	}
+
+	private static function wotd_description(): string {
+		$days = Words::word_of_the_day();
+		$word = reset( $days );
+		$w    = $word ? Words::get( $word ) : null;
+		return $w ? wp_html_excerpt( sprintf( "Today's word is %s: %s. Learn a new English word every day with its meaning, an example and its Scrabble score.", ucfirst( $word ), Words::first_definition( $w ) ), 158, '...' ) : 'Learn a new English word every day with its meaning, an example and its Scrabble score.';
 	}
 
 	/**

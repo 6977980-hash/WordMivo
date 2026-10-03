@@ -69,6 +69,26 @@ $content = array(
 		'how'   => array( 'Choose Quordle (4 boards) or Octordle (8 boards).', 'Add your guess, then tap tiles on each board to match the colours.', 'Follow "Best next guess" or pick from each board\'s list.' ),
 		'more'  => 'When a board has one answer left, we suggest finishing it first. Quordle is owned by Merriam-Webster; this solver is an independent tool.',
 	),
+	'wordle-word-list-download' => array(
+		'tool'  => '[wordmivo_dataset]',
+		'intro' => 'Building a Wordle bot, a word game, a class project or a data story? Download our five-letter word data for free: plain CSV and text files that open in Excel, Google Sheets, Python or R.',
+		'how'   => array(
+			'Click a file to download it.',
+			'Open the CSV in a spreadsheet or load it in your code.',
+			'Credit WordMivo with a link wherever you use it.',
+		),
+		'more'  => 'Words come from the public-domain ENABLE list and frequency ranks from Peter Norvig\'s MIT-licensed data. The likely-answers list is our own estimate, not the official Wordle answer list. Wordle is a trademark of The New York Times Company.',
+	),
+	'word-of-the-day'      => array(
+		'tool'  => '[wordmivo_wotd]',
+		'intro' => 'A new English word every day, with its meaning, an example sentence and its Scrabble score. Come back tomorrow for the next one.',
+		'how'   => array(
+			'Read today\'s word and its meaning.',
+			'Try to use it once today, in a message or a word game.',
+			'Open the word page for synonyms, anagrams and more.',
+		),
+		'more'  => 'Words are picked automatically from our dictionary each day and never repeat. Meanings come from WordNet 3.0, Princeton University.',
+	),
 	'word-finder-widget'   => array(
 		'tool'  => '[wordmivo_embed_code]',
 		'intro' => 'Run a word game blog, a classroom site or a puzzle page? Add our word finder or Wordle solver to your own site for free. Copy the code, paste it into your page, and your readers can use the tool without leaving your site.',

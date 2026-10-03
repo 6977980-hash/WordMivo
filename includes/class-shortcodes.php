@@ -30,6 +30,8 @@ class Shortcodes {
 		add_shortcode( 'wordmivo_multi', array( __CLASS__, 'multi' ) );
 		add_shortcode( 'wordmivo_openers', array( __CLASS__, 'openers' ) );
 		add_shortcode( 'wordmivo_clue', array( __CLASS__, 'clue' ) );
+		add_shortcode( 'wordmivo_wotd', array( __CLASS__, 'wotd' ) );
+		add_shortcode( 'wordmivo_dataset', array( __CLASS__, 'dataset' ) );
 		add_shortcode( 'wordmivo_embed_code', array( 'WordMivo\\Embed', 'shortcode' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_css' ), 20 );
 		add_action( 'wp_footer', array( __CLASS__, 'print_js' ), 5 );
@@ -199,6 +201,71 @@ class Shortcodes {
 			. '<p class="wm-note">Tip: leave the answer empty if you solved it; we use your last guess.</p>'
 			. '<div class="wm-actions"><button type="submit" class="wm-btn">Analyze my game</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
 			. '<div class="wm-results" aria-live="polite"></div></form>';
+	}
+
+	const DATASET = array(
+		'five-letter-words.csv'            => array( 'All five-letter words (CSV)', 'Word, Scrabble score, frequency rank, likely Wordle answer.', 'text/csv' ),
+		'likely-wordle-answers.txt'        => array( 'Likely Wordle answers (TXT)', 'Our estimate of likely answers, one word per line.', 'text/plain' ),
+		'wordle-starting-words-ranked.csv' => array( 'Wordle starting words ranked (CSV)', 'Every five-letter word scored as an opening guess.', 'text/csv' ),
+		'README.md'                        => array( 'README and licence', 'Column descriptions, method and credit line.', 'text/markdown' ),
+	);
+
+	/** Free dataset downloads, with schema.org Dataset markup for Google Dataset Search. */
+	public static function dataset(): string {
+		$base = WORDMIVO_URL . 'assets/dataset/';
+		$html = '<ul class="wm-downloads">';
+		$dist = array();
+		foreach ( self::DATASET as $file => $info ) {
+			$path  = WORDMIVO_DIR . 'assets/dataset/' . $file;
+			$size  = is_readable( $path ) ? size_format( filesize( $path ), 0 ) : '';
+			$html .= sprintf( '<li><a href="%s" download>%s</a> <span class="wm-note">%s %s</span></li>', esc_url( $base . $file ), esc_html( $info[0] ), esc_html( $info[1] ), esc_html( $size ? "({$size})" : '' ) );
+			$dist[] = array( '@type' => 'DataDownload', 'encodingFormat' => $info[2], 'contentUrl' => $base . $file, 'name' => $info[0] );
+		}
+		$html  .= '</ul>';
+		$html  .= '<h2>How to credit</h2><p>The data is free under <a href="https://creativecommons.org/licenses/by/4.0/" rel="nofollow">CC BY 4.0</a>. Use it in apps, research, articles or games; just add this credit with a link:</p>'
+			. '<textarea class="wm-code" rows="2" readonly aria-label="Credit line to copy" onclick="this.select()">Data: &lt;a href="' . esc_url( home_url( '/' ) ) . '"&gt;WordMivo&lt;/a&gt; (CC BY 4.0)</textarea>';
+		$schema = array(
+			'@context'            => 'https://schema.org',
+			'@type'               => 'Dataset',
+			'name'                => 'WordMivo Wordle and Five-Letter Word Dataset',
+			'description'         => 'Five-letter English words with Scrabble scores and frequency ranks, an estimated list of 2,141 likely Wordle answers, and every five-letter word ranked as a Wordle starting word.',
+			'url'                 => Pages::url( array( 'type' => 'tool', 'x' => 'wordle-word-list-download' ) ),
+			'license'             => 'https://creativecommons.org/licenses/by/4.0/',
+			'isAccessibleForFree' => true,
+			'creator'             => Seo::organization(),
+			'keywords'            => array( 'Wordle', 'five-letter words', 'word list', 'word frequency', 'Scrabble' ),
+			'distribution'        => $dist,
+		);
+		return $html . '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES ) . '</script>';
+	}
+
+	/** Word of the day card plus the archive of earlier days. */
+	public static function wotd(): string {
+		$days = Words::word_of_the_day();
+		$word = reset( $days );
+		$w    = $word ? Words::get( $word ) : null;
+		if ( ! $w ) {
+			return '<p class="wm-note">The word of the day appears once the word database is ready.</p>';
+		}
+		$html = '<article class="wm-tool wm-wotd"><p class="wm-date">' . esc_html( wp_date( 'l, F j, Y', strtotime( (string) key( $days ) ) ) ) . '</p>'
+			. '<p class="wm-wotd-word"><a href="' . esc_url( Words::url( $word ) ) . '">' . esc_html( $word ) . '</a></p>';
+		foreach ( $w->meanings as $pos => $senses ) {
+			$html .= '<p><em>' . esc_html( $pos ) . '</em>: ' . esc_html( $senses[0][0] ) . '</p>';
+			if ( $senses[0][1] ) {
+				$html .= '<p class="wm-note">Example: <q>' . esc_html( $senses[0][1] ) . '</q></p>';
+			}
+			break;
+		}
+		$html .= '<p>' . esc_html( sprintf( '%d letters, %d points in Scrabble.', $w->len, $w->score ) ) . ' <a href="' . esc_url( Words::url( $word ) ) . '">' . esc_html( 'More about ' . $word ) . '</a></p></article>';
+		$past  = array_slice( $days, 1, 60, true );
+		if ( $past ) {
+			$html .= '<h2>Previous words of the day</h2><ul class="wm-wotd-list">';
+			foreach ( $past as $date => $x ) {
+				$html .= '<li><span>' . esc_html( wp_date( 'M j, Y', strtotime( $date ) ) ) . '</span> <a href="' . esc_url( Words::url( $x ) ) . '">' . esc_html( $x ) . '</a></li>';
+			}
+			$html .= '</ul>';
+		}
+		return $html;
 	}
 
 	/** Crossword clue solver / reverse dictionary. */

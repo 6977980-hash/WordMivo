@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+- Word of the Day (/word-of-the-day/): picked automatically each day from defined words with an example, never repeated, stored in option wordmivo_wotd; title changes daily; page cache expires at midnight.
+- Open dataset: assets/dataset/ (five-letter-words.csv, likely-wordle-answers.txt, wordle-starting-words-ranked.csv, README, CC BY 4.0) and /wordle-word-list-download/ with schema.org Dataset markup.
+- AI/GPT: /openapi.json describing the word API; new REST modes filter (Wordle-style pattern/include/exclude/notat) and define (meanings, synonyms, anagrams, score, page URL); higher rate limit for ChatGPT actions.
+
 ## 0.4.2
 - /BingSiteAuth.xml served from the Bing code (Bing's XML-file verification method).
 

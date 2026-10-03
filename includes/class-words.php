@@ -161,6 +161,31 @@ class Words {
 		return $text . ' See anagrams and words you can make from its letters.';
 	}
 
+	/**
+	 * Word of the day: picked once per date from defined, fairly common words with an
+	 * example sentence, never repeated, and stored so past days never change.
+	 * Returns [ 'Y-m-d' => word ] newest first.
+	 */
+	public static function word_of_the_day(): array {
+		global $wpdb;
+		$days  = get_option( 'wordmivo_wotd', array() );
+		$days  = is_array( $days ) ? $days : array();
+		$today = current_time( 'Y-m-d' );
+		if ( ! isset( $days[ $today ] ) ) {
+			$used  = array_flip( $days );
+			$cands = $wpdb->get_col( $wpdb->prepare( 'SELECT d.word FROM ' . defs_table() . ' d JOIN ' . words_table() . " w ON w.word = d.word WHERE d.base = '' AND w.is_valid = 1 AND w.len BETWEEN 5 AND 10 AND w.freq_rank BETWEEN 5000 AND 40000 AND d.defs LIKE %s ORDER BY CRC32(CONCAT(d.word, %s)) LIMIT 50", '%~%', $today ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			foreach ( $cands as $c ) {
+				if ( ! isset( $used[ $c ] ) ) {
+					$days[ $today ] = $c;
+					krsort( $days );
+					update_option( 'wordmivo_wotd', $days, false );
+					break;
+				}
+			}
+		}
+		return $days;
+	}
+
 	/** Question/answer pairs: visible FAQ + FAQPage schema. */
 	public static function faq( object $w ): array {
 		$word = $w->word;

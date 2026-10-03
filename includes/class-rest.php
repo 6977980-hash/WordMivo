@@ -34,11 +34,23 @@ class Rest {
 					'mode'    => array(
 						'required' => true,
 						'type'     => 'string',
-						'enum'     => array( 'anagram', 'unscramble', 'rack', 'bee', 'boxed', 'clue' ),
+						'enum'     => array( 'anagram', 'unscramble', 'rack', 'bee', 'boxed', 'clue', 'filter', 'define' ),
 					),
 					'clue'    => array(
 						'type'              => 'string',
 						'sanitize_callback' => static fn( $v ) => mb_substr( sanitize_text_field( (string) $v ), 0, 120 ),
+					),
+					'include' => array(
+						'type'              => 'string',
+						'sanitize_callback' => static fn( $v ) => substr( preg_replace( '/[^a-z]/', '', strtolower( (string) $v ) ), 0, 15 ),
+					),
+					'exclude' => array(
+						'type'              => 'string',
+						'sanitize_callback' => static fn( $v ) => substr( preg_replace( '/[^a-z]/', '', strtolower( (string) $v ) ), 0, 26 ),
+					),
+					'notat'   => array(
+						'type'              => 'string',
+						'sanitize_callback' => static fn( $v ) => substr( preg_replace( '/[^a-z,]/', '', strtolower( (string) $v ) ), 0, 100 ),
 					),
 					'letters' => array(
 						'required'          => true,
@@ -67,7 +79,9 @@ class Rest {
 		$key = 'wm_rl_' . md5( $ip . wp_salt( 'nonce' ) . gmdate( 'YmdHi' ) );
 		$n   = (int) get_transient( $key );
 		set_transient( $key, $n + 1, 70 );
-		return $n >= self::RATE_LIMIT;
+		// ChatGPT actions arrive from a few shared OpenAI addresses, so they get more room.
+		$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? (string) $_SERVER['HTTP_USER_AGENT'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return $n >= ( str_contains( $ua, 'ChatGPT' ) || str_contains( $ua, 'OpenAI' ) ? 20 * self::RATE_LIMIT : self::RATE_LIMIT );
 	}
 
 	public static function words( \WP_REST_Request $request ) {
@@ -78,6 +92,12 @@ class Rest {
 		$letters = $request['letters'];
 		if ( 'clue' === $mode ) {
 			return self::clue( (string) $request['clue'], $letters );
+		}
+		if ( 'filter' === $mode ) {
+			return self::filter( $letters, (string) $request['include'], (string) $request['exclude'], (string) $request['notat'] );
+		}
+		if ( 'define' === $mode ) {
+			return self::define( $letters );
 		}
 		if ( substr_count( $letters, '?' ) > MAX_BLANKS ) {
 			return new \WP_Error( 'wordmivo_blanks', 'At most 2 blanks are allowed.', array( 'status' => 400 ) );
@@ -254,6 +274,91 @@ class Rest {
 		);
 		$response->header( 'Cache-Control', 'public, max-age=86400' );
 		return $response;
+	}
+
+	/**
+	 * Wordle-style filter. $pattern: known letters with ? for unknown (?r??e);
+	 * include: letters that must appear; exclude: letters that must not;
+	 * notat: comma list per position of letters that are in the word but not there.
+	 */
+	public static function filter( string $pattern, string $include, string $exclude, string $notat ) {
+		global $wpdb;
+		$pattern = preg_replace( '/[^a-z?]/', '', $pattern );
+		$len     = strlen( $pattern );
+		if ( $len < 2 ) {
+			return new \WP_Error( 'wordmivo_letters', 'Give the pattern, e.g. ????? or ?r??e.', array( 'status' => 400 ) );
+		}
+		$not  = array_slice( explode( ',', $notat ), 0, $len );
+		// Each include letter as many times as given; each yellow letter at least once.
+		$need = count_chars( $include, 1 );
+		foreach ( count_chars( implode( '', $not ), 1 ) as $code => $n ) {
+			$need[ $code ] = max( $need[ $code ] ?? 0, 1 );
+		}
+		$keep = $include . implode( '', $not ) . str_replace( '?', '', $pattern );
+		$ban  = array_diff( array_unique( str_split( $exclude ) ), str_split( $keep ), array( '' ) );
+		$table = words_table();
+		$sql   = $wpdb->prepare( "SELECT word, scrabble_score, is_likely FROM {$table} WHERE len = %d AND is_valid = 1 AND word LIKE %s", $len, str_replace( '?', '_', $pattern ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $ban ) {
+			$sql .= $wpdb->prepare( ' AND (letter_mask & %d) = 0', letter_mask( implode( '', $ban ) ) );
+		}
+		if ( $need ) {
+			$mask = letter_mask( implode( '', array_map( 'chr', array_keys( $need ) ) ) );
+			$sql .= $wpdb->prepare( ' AND (letter_mask & %d) = %d', $mask, $mask );
+		}
+		$rows = $wpdb->get_results( $sql . ' ORDER BY is_likely DESC, freq_rank IS NULL, freq_rank LIMIT 2000', ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$out  = array();
+		foreach ( $rows as $r ) {
+			$ok   = true;
+			$have = count_chars( $r[0], 1 );
+			foreach ( $need as $code => $n ) {
+				if ( ( $have[ $code ] ?? 0 ) < $n ) {
+					$ok = false;
+				}
+			}
+			foreach ( $not as $i => $letters ) {
+				if ( '' !== $letters && false !== strpos( $letters, $r[0][ $i ] ) ) {
+					$ok = false;
+				}
+			}
+			if ( $ok ) {
+				$out[] = array( $r[0], (int) $r[1], (int) $r[2] );
+			}
+			if ( count( $out ) >= 300 ) {
+				break;
+			}
+		}
+		return rest_ensure_response(
+			array(
+				'mode'  => 'filter',
+				'count' => count( $out ),
+				'words' => $out,
+				'note'  => '[word, scrabble score, likely Wordle answer 1/0], likely and common words first.',
+			)
+		);
+	}
+
+	/** Everything about one word: meaning, synonyms, score, validity, page URL. */
+	public static function define( string $word ) {
+		$word = preg_replace( '/[^a-z]/', '', $word );
+		$w    = Words::get( $word );
+		if ( ! $w ) {
+			return rest_ensure_response( array( 'word' => $word, 'valid' => false, 'note' => 'Not in our word list.' ) );
+		}
+		global $wpdb;
+		$defs = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT defs FROM ' . defs_table() . ' WHERE word = %s', $word ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return rest_ensure_response(
+			array(
+				'word'           => $word,
+				'valid'          => (bool) $w->is_valid,
+				'scrabble_score' => $w->score,
+				'likely_wordle'  => (bool) $w->is_likely,
+				'base_form'      => $w->base ? $w->base : null,
+				'meanings'       => $w->meanings,
+				'synonyms'       => Words::synonyms( $defs ),
+				'anagrams'       => Words::anagrams( $w ),
+				'url'            => Words::url( $word ),
+			)
+		);
 	}
 
 	/** Exact anagrams: same letters, same counts. */
