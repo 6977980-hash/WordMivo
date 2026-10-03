@@ -141,6 +141,8 @@ class Seo {
 
 		if ( $spec ) {
 			self::json_ld( $spec, $canonical, $description );
+		} else {
+			self::page_schema();
 		}
 	}
 
@@ -161,13 +163,7 @@ class Seo {
 			'url'       => $home,
 			'publisher' => array( '@id' => $home . '#org' ),
 		);
-		$graph[] = array(
-			'@type' => 'Organization',
-			'@id'   => $home . '#org',
-			'name'  => 'WordMivo',
-			'url'   => $home,
-			'logo'  => self::asset_url( 'og.png' ),
-		);
+		$graph[] = self::organization();
 
 		$crumbs = array(
 			array(
@@ -278,6 +274,64 @@ class Seo {
 			),
 			JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
 		) . "</script>\n";
+	}
+
+	public static function organization(): array {
+		$home = home_url( '/' );
+		return array(
+			'@type'   => 'Organization',
+			'@id'     => $home . '#org',
+			'name'    => 'WordMivo',
+			'url'     => $home,
+			'logo'    => self::asset_url( 'og.png' ),
+			'email'   => 'contact@wordmivo.com',
+			'founder' => self::person(),
+			'sameAs'  => array_values( self::social_links() ),
+		);
+	}
+
+	const SOCIAL = array(
+		'x'         => 'X (Twitter)',
+		'facebook'  => 'Facebook',
+		'pinterest' => 'Pinterest',
+		'instagram' => 'Instagram',
+		'youtube'   => 'YouTube',
+		'linkedin'  => 'LinkedIn page',
+	);
+
+	/** WordMivo's own social profiles from Tools > WordMivo: [ key => url ]. */
+	public static function social_links(): array {
+		$links = get_option( 'wordmivo_social', array() );
+		return is_array( $links ) ? array_filter( array_intersect_key( $links, self::SOCIAL ) ) : array();
+	}
+
+	public static function person(): array {
+		return array(
+			'@type'  => 'Person',
+			'@id'    => home_url( '/about/' ) . '#owner',
+			'name'   => OWNER_NAME,
+			'url'    => home_url( '/about/' ),
+			'sameAs' => array( OWNER_LINKEDIN ),
+		);
+	}
+
+	/** About and Methodology: AboutPage + Organization + Person, for E-E-A-T. */
+	private static function page_schema(): void {
+		if ( ! is_page( array( 'about', 'methodology' ) ) ) {
+			return;
+		}
+		$graph = array(
+			array(
+				'@type'     => is_page( 'about' ) ? 'AboutPage' : 'WebPage',
+				'url'       => get_permalink(),
+				'name'      => get_the_title(),
+				'publisher' => array( '@id' => home_url( '/' ) . '#org' ),
+				'author'    => array( '@id' => home_url( '/about/' ) . '#owner' ),
+			),
+			self::organization(),
+			self::person(),
+		);
+		echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $graph ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "</script>\n";
 	}
 
 	public static function robots_txt( string $output, $is_public ): string {

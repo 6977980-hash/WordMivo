@@ -15,6 +15,10 @@ const MAX_LEN    = 8;
 const MAX_RACK   = 15;
 const MAX_BLANKS = 2;
 
+// Site owner, shown on About/Methodology and in schema (E-E-A-T).
+const OWNER_NAME     = 'Ali Ahmad';
+const OWNER_LINKEDIN = 'https://www.linkedin.com/in/ali-ahmad-chaudhry-12777486/';
+
 // Google Search Console verification for wordmivo.com (public by design; overridable in Tools > WordMivo).
 const GSC_DEFAULT = '9cmloaft-ebcSjQTtJyk9sf1CjuJXuAEsMCD1W_u4p4';
 

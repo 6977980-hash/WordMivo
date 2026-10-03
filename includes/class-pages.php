@@ -51,6 +51,7 @@ class Pages {
 		'spelling-bee-solver'  => 'Spelling Bee Solver',
 		'letter-boxed-solver'  => 'Letter Boxed Solver',
 		'quordle-solver'       => 'Quordle & Octordle Solver',
+		'best-wordle-starting-words' => 'Best Wordle Starting Words',
 	);
 
 	/** @var array|null Spec for the current request. */
@@ -433,6 +434,7 @@ class Pages {
 				'spelling-bee-solver'  => 'Spelling Bee Solver: All Words & Pangrams',
 				'letter-boxed-solver'  => 'Letter Boxed Solver: Words & Two-Word Solutions',
 				'quordle-solver'       => 'Quordle & Octordle Solver: Best Next Guess',
+				'best-wordle-starting-words' => 'Best Wordle Starting Words, Ranked by Data',
 			);
 			return ( $titles[ $spec['x'] ] ?? self::heading( $spec ) ) . ' | WordMivo';
 		}
@@ -466,6 +468,7 @@ class Pages {
 			'wordle-analyzer'      => 'Free Wordle game analysis: enter your guesses and the answer to get a skill and luck score for every guess, and the best guess you could have played.',
 			'spelling-bee-solver'  => 'Enter the seven Spelling Bee letters to see every word, pangrams first, with points for each word.',
 			'letter-boxed-solver'  => 'Enter the 12 Letter Boxed letters side by side to find every playable word and two-word solutions.',
+			'best-wordle-starting-words' => 'The best Wordle starting words ranked by data: how many answers each opener leaves on average, its worst case, and where CRANE, SLATE and ADIEU rank.',
 			'quordle-solver'       => 'Solve Quordle and Octordle: enter your guesses and colours for each board to see the possible answers and the best next guess for all boards.',
 		);
 		return $map[ $tool ] ?? '';

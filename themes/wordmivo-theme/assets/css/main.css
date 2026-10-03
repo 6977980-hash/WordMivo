@@ -40,3 +40,4 @@ h2{font-size:1.3rem}
 .wm-consent p{margin:0;flex:1 1 220px;font-size:.9rem}
 .wm-entry{border-bottom:1px solid var(--line);padding:16px 0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.wm-social{list-style:none;display:flex;flex-wrap:wrap;gap:8px 16px;padding:0;margin:8px 0}.wm-social a{display:inline-flex;align-items:center;min-height:44px}

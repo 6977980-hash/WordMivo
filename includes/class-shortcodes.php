@@ -28,6 +28,7 @@ class Shortcodes {
 		add_shortcode( 'wordmivo_bee', array( __CLASS__, 'bee' ) );
 		add_shortcode( 'wordmivo_boxed', array( __CLASS__, 'boxed' ) );
 		add_shortcode( 'wordmivo_multi', array( __CLASS__, 'multi' ) );
+		add_shortcode( 'wordmivo_openers', array( __CLASS__, 'openers' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_css' ), 20 );
 		add_action( 'wp_footer', array( __CLASS__, 'print_js' ), 5 );
 	}
@@ -230,6 +231,40 @@ class Shortcodes {
 			. '<div class="wm-actions"><button type="button" class="wm-btn" data-action="add">Add guess</button><button type="button" class="wm-btn wm-btn-ghost" data-action="undo">Remove last</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
 			. '<div class="wm-best-multi" aria-live="polite"></div>'
 			. '<div class="wm-boards"></div></div>';
+	}
+
+	/**
+	 * Best starting words, from data/starting-words.json (computed offline from our
+	 * likely-answer list with the same feedback rules as the solver).
+	 */
+	public static function openers(): string {
+		$file = WORDMIVO_DIR . 'data/starting-words.json';
+		$data = is_readable( $file ) ? json_decode( (string) file_get_contents( $file ), true ) : null; // phpcs:ignore WordPress.WP.AlternativeFunctions
+		if ( ! $data ) {
+			return '';
+		}
+		$table = static function ( array $rows, bool $show_rank ) {
+			$html = '<div class="wm-table-wrap"><table class="wm-facts wm-openers"><thead><tr>' . ( $show_rank ? '<th scope="col">Rank</th>' : '<th scope="col">#</th>' ) . '<th scope="col">Word</th><th scope="col">Answers left (avg)</th><th scope="col">Worst case</th><th scope="col">Green chance</th></tr></thead><tbody>';
+			foreach ( $rows as $i => $r ) {
+				$word  = esc_html( strtoupper( $r['w'] ) );
+				$link  = Words::linkable( array( $r['w'] ) ) ? '<a href="' . esc_url( Words::url( $r['w'] ) ) . '">' . $word . '</a>' : $word;
+				$html .= sprintf( '<tr><td>%d</td><td><strong>%s</strong></td><td>%s</td><td>%d</td><td>%d%%</td></tr>', $show_rank ? (int) $r['rank'] : $i + 1, $link, esc_html( number_format_i18n( $r['e'], 1 ) ), (int) $r['worst'], (int) $r['green'] );
+			}
+			return $html . '</tbody></table></div>';
+		};
+		$top = $data['top'][0];
+		$out = '<p class="wm-lead"><strong>' . esc_html( strtoupper( $top['w'] ) ) . ' is the best Wordle starting word in our analysis.</strong> '
+			. sprintf( 'After it, on average only %s of %s likely answers are left, and at worst %d.', esc_html( number_format_i18n( $top['e'], 1 ) ), esc_html( number_format_i18n( $data['answers'] ) ), (int) $top['worst'] ) . '</p>'
+			. '<h2>Top 25 starting words</h2>'
+			. '<p>We tested all ' . esc_html( number_format_i18n( $data['guesses'] ) ) . ' five-letter dictionary words as openers against every likely answer. Lower "answers left" is better.</p>'
+			. $table( array_slice( $data['top'], 0, 25 ), false )
+			. '<h2>Best starting words that can also be the answer</h2>'
+			. '<p>These are common words, so they also give you a small chance of winning in one.</p>'
+			. $table( array_slice( $data['top_answers'], 0, 15 ), false )
+			. '<h2>How popular openers compare</h2>'
+			. '<p>Where the starting words people talk about most land among all ' . esc_html( number_format_i18n( $data['guesses'] ) ) . ' words.</p>'
+			. $table( $data['popular'], true );
+		return $out;
 	}
 
 	public static function wordle_hints(): string {

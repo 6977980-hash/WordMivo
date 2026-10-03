@@ -75,6 +75,15 @@ class Admin {
 		}
 		update_option( 'wordmivo_gsc_verification', sanitize_text_field( $gsc ) );
 
+		$social = array();
+		foreach ( array_keys( Seo::SOCIAL ) as $key ) {
+			$url = esc_url_raw( trim( wp_unslash( $_POST[ 'social_' . $key ] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- esc_url_raw.
+			if ( $url && 'https' === wp_parse_url( $url, PHP_URL_SCHEME ) ) {
+				$social[ $key ] = strtok( $url, '?' ); // Drop tracking parameters.
+			}
+		}
+		update_option( 'wordmivo_social', $social );
+
 		update_option( 'wordmivo_ads_enabled', empty( $_POST['ads_enabled'] ) ? 0 : 1 );
 		$client = sanitize_text_field( wp_unslash( $_POST['adsense_client'] ?? '' ) );
 		update_option( 'wordmivo_adsense_client', preg_match( '/^ca-pub-\d{10,20}$/', $client ) ? $client : '' );
@@ -149,10 +158,26 @@ class Admin {
 				<?php endforeach; ?>
 				<p class="description">While "Show ads" is off, nothing is added to pages. When on, each slot keeps its space reserved so the page does not jump, and AdSense loads only when a slot is near the screen. ads.txt is served automatically at /ads.txt.</p>
 			</td></tr>
+			<tr><th scope="row">WordMivo social profiles</th><td>
+				<?php $social = Seo::social_links(); ?>
+				<?php foreach ( Seo::SOCIAL as $key => $label ) : ?>
+					<p><label><?php echo esc_html( $label ); ?> <input name="social_<?php echo esc_attr( $key ); ?>" type="url" class="regular-text" placeholder="https://" value="<?php echo esc_attr( $social[ $key ] ?? '' ); ?>"></label></p>
+				<?php endforeach; ?>
+				<p class="description">Shown in the footer and added to Google's structured data (sameAs) so the site is recognised as a brand.</p>
+			</td></tr>
 			<tr><th scope="row"><label for="wm-gsc">Search Console verification code</label></th><td><input id="wm-gsc" name="gsc" type="text" class="regular-text" value="<?php echo esc_attr( get_option( 'wordmivo_gsc_verification', GSC_DEFAULT ) ); ?>"></td></tr>
 		</table>
 		<?php submit_button(); ?>
 	</form>
+
+	<h2>IndexNow (Bing)</h2>
+	<?php $last = get_option( 'wordmivo_indexnow_last' ); ?>
+	<p>Key file: <a href="<?php echo esc_url( home_url( '/' . IndexNow::key() . '.txt' ) ); ?>"><?php echo esc_html( IndexNow::key() ); ?>.txt</a>.
+	<?php if ( $last ) : ?>
+		Last run <?php echo esc_html( human_time_diff( $last['time'] ) ); ?> ago: <?php echo esc_html( $last['sent'] . ' of ' . $last['new'] . ' new URLs submitted.' ); ?>
+	<?php else : ?>
+		New URLs are submitted automatically after each import and when page sets change.
+	<?php endif; ?></p>
 
 	<?php $log = get_option( 'wordmivo_cleanup_log' ); ?>
 	<?php if ( $log ) : ?>

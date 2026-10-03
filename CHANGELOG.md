@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+- IndexNow: key served at /{key}.txt; new URLs are submitted to Bing/IndexNow in the background after each import and page-set change, and posts/pages on publish. WP-CLI: wp wordmivo indexnow. Skipped on localhost.
+- E-E-A-T: About page "Why I built WordMivo" by Ali Ahmad with LinkedIn; Methodology byline; Organization/Person/AboutPage schema with founder and sameAs.
+- Social profile links setting (Tools > WordMivo): shown in the footer and as Organization sameAs.
+- New data page /best-wordle-starting-words/ (data/starting-words.json, computed offline from our likely-answer list).
+
 ## 0.3.1
 - SEO titles: keyword-rich titles for all tool pages; standard pages use "Title | WordMivo" without repeating the brand.
 - Hand-written meta descriptions for About, Methodology, Contact, Privacy Policy and Terms (a page excerpt still overrides).

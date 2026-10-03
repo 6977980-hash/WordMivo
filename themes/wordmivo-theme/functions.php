@@ -116,3 +116,21 @@ function wordmivo_footer_links(): void {
 		echo '</ul></nav>';
 	}
 }
+
+/**
+ * Footer links to WordMivo's social profiles, when set in Tools > WordMivo.
+ */
+function wordmivo_footer_social(): void {
+	if ( ! class_exists( 'WordMivo\\Seo' ) ) {
+		return;
+	}
+	$links = WordMivo\Seo::social_links();
+	if ( ! $links ) {
+		return;
+	}
+	echo '<ul class="wm-social">';
+	foreach ( $links as $key => $url ) {
+		printf( '<li><a href="%s" rel="me noopener" target="_blank">%s</a></li>', esc_url( $url ), esc_html( WordMivo\Seo::SOCIAL[ $key ] ) );
+	}
+	echo '</ul>';
+}

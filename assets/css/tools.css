@@ -52,3 +52,4 @@ span.wm-tile,button.wm-tile{width:40px;height:40px;display:inline-flex;align-ite
 .wm-board-title{font-weight:700;margin:0 0 4px}
 .wm-board .wm-words{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
 .wm-best{font-weight:700}
+.wm-table-wrap{overflow-x:auto;margin:8px 0 16px}.wm-openers{max-width:none;font-size:.95rem}.wm-openers th{font-size:.8rem}

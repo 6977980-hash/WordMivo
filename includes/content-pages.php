@@ -13,6 +13,8 @@ defined( 'ABSPATH' ) || exit;
 function standard_pages(): array {
 	$updated = 'Last updated: October 3, 2026.';
 	$email   = 'contact@wordmivo.com';
+	$owner   = OWNER_NAME;
+	$profile = OWNER_LINKEDIN;
 
 	return array(
 		'about'            => array(
@@ -23,9 +25,16 @@ function standard_pages(): array {
 <ul>
 <li><strong>Word finders</strong> for 3 to 8 letter words: enter the letters you know, the letters that must appear and the ones to leave out.</li>
 <li><strong>Wordle solver</strong>: type your guesses and colours to see every answer that still fits, plus the best next guess.</li>
+<li><strong>Wordle game analyzer</strong>: get a skill and luck score for every guess you played.</li>
+<li><strong>Puzzle solvers</strong> for Spelling Bee, Letter Boxed, Quordle and Octordle.</li>
 <li><strong>Anagram solver, word unscrambler and Scrabble word finder</strong>, including blank tiles.</li>
+<li><strong>Word pages</strong> with the meaning, Scrabble score and anagrams of any word.</li>
 <li><strong>Word lists</strong>: words that start with, end in or contain any letter, with the most common words shown first.</li>
 </ul>
+<h2>Why I built WordMivo</h2>
+<p>Hi, I'm {$owner}. Like millions of people, I play Wordle and other word games most days. When I got stuck and looked for help, the word-finder sites I found were slow to load, packed with pop-ups, and listed thousands of obscure words in A to Z order, so the word I actually needed was buried somewhere on page twelve.</p>
+<p>I built WordMivo to be the tool I wanted: pages that open instantly on a phone, common words first, honest about where the data comes from, and solvers that explain their suggestions instead of just spoiling the answer. Every tool on the site is free and needs no sign-up.</p>
+<p>WordMivo is built and run by {$owner}. You can find me on <a href="{$profile}" rel="author noopener">LinkedIn</a>, or write to <a href="mailto:{$email}">{$email}</a>.</p>
 <h2>How we are different</h2>
 <p>Most word lists are sorted A to Z, so rare words crowd out the ones you actually need. WordMivo ranks words by how often they appear in real English text, so likely answers come first. Every list also shows Scrabble scores. You can read exactly where our words come from on our <a href="/methodology/">methodology page</a>.</p>
 <h2>Free and fast</h2>
@@ -37,6 +46,7 @@ HTML,
 		'methodology'      => array(
 			'title'   => 'How Our Word Lists Work',
 			'content' => <<<HTML
+<p><em>Maintained by <a href="{$profile}" rel="author noopener">{$owner}</a>.</em></p>
 <p>This page explains where WordMivo's words come from and how we sort them, so you know what you are looking at.</p>
 <h2>Word source</h2>
 <p>Our word list is based on the open-source <a href="https://github.com/dwyl/english-words" rel="nofollow">dwyl/english-words</a> list (released under the Unlicense). It contains about 370,000 English words. We add the public-domain <a href="https://github.com/dolph/dictionary" rel="nofollow">ENABLE</a> word list, the dictionary behind many Scrabble-style games, and keep only words made of the letters a to z. That gives about 380,000 words. Words found in ENABLE are treated as dictionary words and shown before others.</p>
@@ -118,7 +128,7 @@ HTML,
 	);
 }
 
-const PAGES_VERSION = '4';
+const PAGES_VERSION = '5';
 
 /**
  * Create missing pages, and refresh pages we created earlier as long as nobody has

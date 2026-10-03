@@ -56,6 +56,14 @@ class CLI {
 	}
 
 	/**
+	 * Submit new URLs to IndexNow (Bing and partners) now.
+	 */
+	public function indexnow(): void {
+		$r = IndexNow::sync();
+		\WP_CLI::log( wp_json_encode( $r ) );
+	}
+
+	/**
 	 * Print database counts.
 	 */
 	public function stats(): void {

@@ -69,6 +69,16 @@ $content = array(
 		'how'   => array( 'Choose Quordle (4 boards) or Octordle (8 boards).', 'Add your guess, then tap tiles on each board to match the colours.', 'Follow "Best next guess" or pick from each board\'s list.' ),
 		'more'  => 'When a board has one answer left, we suggest finishing it first. Quordle is owned by Merriam-Webster; this solver is an independent tool.',
 	),
+	'best-wordle-starting-words' => array(
+		'tool'  => '[wordmivo_openers]',
+		'intro' => 'Which word should you start Wordle with? Instead of opinions, we ran the numbers: every five-letter word was tested as a first guess against every likely answer.',
+		'how'   => array(
+			'"Answers left (avg)" is how many likely answers remain, on average, after the colours you get from that first guess. Lower is better.',
+			'"Worst case" is the largest number of answers that could remain.',
+			'"Green chance" is how often the word gets at least one green tile.',
+		),
+		'more'  => 'Results use our own list of likely answers (common five-letter words that are not plurals or past tenses), not the official answer list, and the same colour rules as the Wordle solver. Vowel-heavy words like ADIEU and AUDIO find vowels but leave far more answers than words with common consonants like R, S, T and L. Wordle is a trademark of The New York Times Company.',
+	),
 	'todays-wordle-hints'  => array(
 		'tool'  => '[wordmivo_wordle_hints]',
 		'intro' => "Stuck on today's Wordle? Open the hints one at a time. The answer stays hidden until you choose to reveal it.",
