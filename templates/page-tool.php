@@ -69,6 +69,26 @@ $content = array(
 		'how'   => array( 'Choose Quordle (4 boards) or Octordle (8 boards).', 'Add your guess, then tap tiles on each board to match the colours.', 'Follow "Best next guess" or pick from each board\'s list.' ),
 		'more'  => 'When a board has one answer left, we suggest finishing it first. Quordle is owned by Merriam-Webster; this solver is an independent tool.',
 	),
+	'word-finder-widget'   => array(
+		'tool'  => '[wordmivo_embed_code]',
+		'intro' => 'Run a word game blog, a classroom site or a puzzle page? Add our word finder or Wordle solver to your own site for free. Copy the code, paste it into your page, and your readers can use the tool without leaving your site.',
+		'how'   => array(
+			'Pick a widget below and copy its code.',
+			'In WordPress, add a "Custom HTML" block and paste the code. Other site builders have a similar "embed" or "HTML" option.',
+			'Publish. The widget loads only when readers scroll to it, so it will not slow your page down.',
+		),
+		'more'  => 'The widget is free, has no ads and needs no sign-up. Please keep the small credit link under it. Questions? Write to contact@wordmivo.com.',
+	),
+	'crossword-solver'     => array(
+		'tool'  => '[wordmivo_clue]',
+		'intro' => 'Stuck on a crossword clue, or know what a word means but cannot think of it? Type the clue or meaning and the answer length or the letters you have, and we list the words that fit, best match first.',
+		'how'   => array(
+			'Type the clue or a description, e.g. "large wading bird" or "feeling of great happiness".',
+			'Type the answer length (5) or a pattern with ? for missing letters (c???e).',
+			'Press "Find answers". Each result shows its meaning so you can check it fits.',
+		),
+		'more'  => 'Answers come from word meanings and synonyms in WordNet 3.0 (Princeton University) and our ENABLE word list. With no clue, the tool lists every common word that fits the pattern, which helps when you already have most letters.',
+	),
 	'best-wordle-starting-words' => array(
 		'tool'  => '[wordmivo_openers]',
 		'intro' => 'Which word should you start Wordle with? Instead of opinions, we ran the numbers: every five-letter word was tested as a first guess against every likely answer.',

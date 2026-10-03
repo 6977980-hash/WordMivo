@@ -29,6 +29,8 @@ class Shortcodes {
 		add_shortcode( 'wordmivo_boxed', array( __CLASS__, 'boxed' ) );
 		add_shortcode( 'wordmivo_multi', array( __CLASS__, 'multi' ) );
 		add_shortcode( 'wordmivo_openers', array( __CLASS__, 'openers' ) );
+		add_shortcode( 'wordmivo_clue', array( __CLASS__, 'clue' ) );
+		add_shortcode( 'wordmivo_embed_code', array( 'WordMivo\\Embed', 'shortcode' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_css' ), 20 );
 		add_action( 'wp_footer', array( __CLASS__, 'print_js' ), 5 );
 	}
@@ -196,6 +198,17 @@ class Shortcodes {
 			. '<div class="wm-row">' . self::text_input( 'answer', "The day's answer", 5, 'e.g. pious' ) . '</div>'
 			. '<p class="wm-note">Tip: leave the answer empty if you solved it; we use your last guess.</p>'
 			. '<div class="wm-actions"><button type="submit" class="wm-btn">Analyze my game</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
+			. '<div class="wm-results" aria-live="polite"></div></form>';
+	}
+
+	/** Crossword clue solver / reverse dictionary. */
+	public static function clue(): string {
+		self::$needs_assets = true;
+		return '<form class="wm-tool wm-clue" data-wm="clue" data-words="' . esc_attr( home_url( '/word/' ) ) . '" role="search">'
+			. '<label>Clue or meaning<input type="text" name="clue" maxlength="120" autocomplete="off" placeholder="e.g. large wading bird"></label>'
+			. '<div class="wm-row">' . self::text_input( 'pattern', 'Answer length or pattern', 15, 'e.g. 5 or c???e', ' required' ) . '</div>'
+			. '<p class="wm-note">Use ? for unknown letters. Type just a number if you only know the length.</p>'
+			. '<div class="wm-actions"><button type="submit" class="wm-btn">Find answers</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
 			. '<div class="wm-results" aria-live="polite"></div></form>';
 	}
 

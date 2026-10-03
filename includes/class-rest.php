@@ -34,7 +34,11 @@ class Rest {
 					'mode'    => array(
 						'required' => true,
 						'type'     => 'string',
-						'enum'     => array( 'anagram', 'unscramble', 'rack', 'bee', 'boxed' ),
+						'enum'     => array( 'anagram', 'unscramble', 'rack', 'bee', 'boxed', 'clue' ),
+					),
+					'clue'    => array(
+						'type'              => 'string',
+						'sanitize_callback' => static fn( $v ) => mb_substr( sanitize_text_field( (string) $v ), 0, 120 ),
 					),
 					'letters' => array(
 						'required'          => true,
@@ -55,10 +59,7 @@ class Rest {
 		if ( ! preg_match( '/^[a-z?]{2,' . MAX_RACK . '}$/', $value ) ) {
 			return new \WP_Error( 'wordmivo_letters', 'Use 2-15 letters a-z, with ? for a blank.', array( 'status' => 400 ) );
 		}
-		if ( substr_count( $value, '?' ) > MAX_BLANKS ) {
-			return new \WP_Error( 'wordmivo_blanks', 'At most 2 blanks are allowed.', array( 'status' => 400 ) );
-		}
-		return true;
+		return true; // Blank limits depend on the mode; checked in words().
 	}
 
 	private static function rate_limited(): bool {
@@ -75,6 +76,12 @@ class Rest {
 		}
 		$mode    = $request['mode'];
 		$letters = $request['letters'];
+		if ( 'clue' === $mode ) {
+			return self::clue( (string) $request['clue'], $letters );
+		}
+		if ( substr_count( $letters, '?' ) > MAX_BLANKS ) {
+			return new \WP_Error( 'wordmivo_blanks', 'At most 2 blanks are allowed.', array( 'status' => 400 ) );
+		}
 		if ( 'bee' === $mode || 'boxed' === $mode ) {
 			return self::puzzle( $mode, $letters );
 		}
@@ -190,6 +197,63 @@ class Rest {
 			++$n;
 		}
 		return $n;
+	}
+
+	/**
+	 * Crossword clue / reverse dictionary. $pattern uses ? for unknown letters
+	 * (c???e); its length is the answer length. An empty clue lists pattern matches.
+	 */
+	public static function clue( string $clue, string $pattern ) {
+		global $wpdb;
+		$pattern = preg_replace( '/[^a-z?]/', '', strtolower( $pattern ) );
+		$len     = strlen( $pattern );
+		if ( $len < 2 ) {
+			return new \WP_Error( 'wordmivo_letters', 'Enter the answer length or pattern, e.g. ????? or c???e.', array( 'status' => 400 ) );
+		}
+		$like  = str_replace( '?', '_', $pattern );
+		$table = words_table();
+		$defs  = defs_table();
+		$terms = trim( preg_replace( '/[^a-z0-9\s-]/', ' ', strtolower( $clue ) ) );
+		if ( '' === $terms ) {
+			if ( ! str_contains( $pattern, '?' ) || strlen( str_replace( '?', '', $pattern ) ) === 0 ) {
+				return new \WP_Error( 'wordmivo_clue', 'Type a clue, or some known letters in the pattern.', array( 'status' => 400 ) );
+			}
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT w.word, d.defs FROM {$table} w LEFT JOIN {$defs} d ON d.word = w.word WHERE w.len = %d AND w.word LIKE %s AND w.is_valid = 1 ORDER BY w.freq_rank IS NULL, w.freq_rank LIMIT 100", $len, $like ), ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		} else {
+			// Words whose meaning or synonyms match the clue, best match first, common words breaking ties.
+			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT d.word, d.defs FROM {$defs} d JOIN {$table} w ON w.word = d.word WHERE w.len = %d AND d.word LIKE %s AND MATCH(d.defs) AGAINST (%s IN NATURAL LANGUAGE MODE) ORDER BY MATCH(d.defs) AGAINST (%s IN NATURAL LANGUAGE MODE) DESC, w.freq_rank IS NULL, w.freq_rank LIMIT 50", $len, $like, $terms, $terms ), ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+		$out  = array();
+		$skip = array_flip( preg_split( '/\s+/', $terms ) ); // The answer is never a word of the clue.
+		foreach ( (array) $rows as $r ) {
+			if ( isset( $skip[ $r[0] ] ) ) {
+				continue;
+			}
+			// Show the sense that shares the most words with the clue.
+			$best  = '';
+			$score = -1;
+			foreach ( Words::parse( (string) $r[1] ) as $senses ) {
+				foreach ( $senses as $sense ) {
+					$n = count( array_intersect_key( array_flip( preg_split( '/[^a-z]+/', strtolower( $sense[0] ) ) ), $skip ) );
+					if ( $n > $score ) {
+						$best  = $sense[0];
+						$score = $n;
+					}
+				}
+			}
+			$out[] = array( $r[0], $best );
+		}
+		$response = rest_ensure_response(
+			array(
+				'mode'    => 'clue',
+				'clue'    => $clue,
+				'letters' => $pattern,
+				'count'   => count( $out ),
+				'words'   => $out,
+			)
+		);
+		$response->header( 'Cache-Control', 'public, max-age=86400' );
+		return $response;
 	}
 
 	/** Exact anagrams: same letters, same counts. */

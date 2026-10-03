@@ -561,6 +561,49 @@
 		return (text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length === 5; }).slice(0, 6);
 	}
 
+	/** ROT13, so a shared analyzer link does not show the answer in plain text. */
+	function rot13(t) {
+		return t.replace(/[a-z]/g, function (c) { return String.fromCharCode((c.charCodeAt(0) - 84) % 26 + 97); });
+	}
+
+	var EMOJI = { green: '\uD83D\uDFE9', yellow: '\uD83D\uDFE8', gray: '\u2B1B' };
+
+	function shareText(steps, skill, luck) {
+		var solved = steps[steps.length - 1].solved;
+		var lines = ['WordMivo Wordle analysis: ' + (solved ? steps.length : 'X') + '/6', 'Skill ' + skill + '/99 \u00B7 Luck ' + luck + '/99'];
+		steps.forEach(function (st) { lines.push(st.colours.map(function (c) { return EMOJI[c]; }).join('') + ' S' + st.skill + ' L' + st.luck); });
+		return lines.join('\n');
+	}
+
+	/** A 1080x1080 result card drawn on a canvas (no letters, so no spoilers). */
+	function resultImage(steps, skill, luck) {
+		var c = document.createElement('canvas');
+		c.width = 1080; c.height = 1080;
+		var x = c.getContext('2d');
+		x.fillStyle = '#0f172a'; x.fillRect(0, 0, 1080, 1080);
+		x.fillStyle = '#ffffff'; x.font = 'bold 64px system-ui, sans-serif'; x.textAlign = 'center';
+		x.fillText('My Wordle report card', 540, 130);
+		x.font = 'bold 96px system-ui, sans-serif';
+		x.fillStyle = '#22c55e'; x.fillText('Skill ' + skill, 300, 270);
+		x.fillStyle = '#facc15'; x.fillText('Luck ' + luck, 780, 270);
+		var colours = { green: '#16a34a', yellow: '#ca8a04', gray: '#475569' };
+		var size = 92, gap = 14, left = (1080 - (5 * size + 4 * gap)) / 2 - 90;
+		steps.forEach(function (st, r) {
+			var y = 340 + r * (size + gap);
+			st.colours.forEach(function (col, i) { x.fillStyle = colours[col]; x.fillRect(left + i * (size + gap), y, size, size); });
+			x.fillStyle = '#e2e8f0'; x.font = 'bold 40px system-ui, sans-serif'; x.textAlign = 'left';
+			x.fillText(st.skill + ' / ' + st.luck, left + 5 * (size + gap) + 20, y + 62);
+		});
+		var solved = steps[steps.length - 1].solved;
+		x.textAlign = 'center'; x.fillStyle = '#ffffff'; x.font = 'bold 56px system-ui, sans-serif';
+		x.fillText(solved ? 'Solved in ' + steps.length + '/6' : 'Not solved', 540, 340 + steps.length * (size + gap) + 90);
+		x.fillStyle = '#94a3b8'; x.font = '32px system-ui, sans-serif';
+		x.fillText('Skill / luck for each guess', 540, 340 + steps.length * (size + gap) + 145);
+		x.textAlign = 'center'; x.fillStyle = '#a5b4fc'; x.font = 'bold 48px system-ui, sans-serif';
+		x.fillText('wordmivo.com/wordle-analyzer', 540, 1030);
+		return c;
+	}
+
 	function initAnalyzer(form) {
 		var out = form.querySelector('.wm-results');
 		function run() {
@@ -571,7 +614,7 @@
 				message(out, 'Type at least one five-letter guess and the answer.');
 				return;
 			}
-			setParams({ g: guesses.join('.'), a: answer });
+			setParams({ s: rot13(guesses.join('.') + '-' + answer) });
 			message(out, 'Analyzing...');
 			loadWords(form.dataset.src).then(function (words) {
 				return new Promise(function (resolve) { setTimeout(function () { resolve(words); }, 30); });
@@ -599,6 +642,38 @@
 				});
 				var sum = el('p', 'wm-count', 'Overall: skill ' + Math.round(skill / steps.length) + '/99, luck ' + Math.round(luck / steps.length) + '/99' + (steps[steps.length - 1].solved ? ', solved in ' + steps.length + '.' : '.'));
 				out.insertBefore(sum, out.firstChild);
+				var avgSkill = Math.round(skill / steps.length), avgLuck = Math.round(luck / steps.length);
+				var bar = el('div', 'wm-actions');
+				var shareBtn = el('button', 'wm-btn', 'Share my result');
+				shareBtn.type = 'button';
+				var imgBtn = el('button', 'wm-btn wm-btn-ghost', 'Save image');
+				imgBtn.type = 'button';
+				var note = el('span', 'wm-copied');
+				bar.appendChild(shareBtn); bar.appendChild(imgBtn); bar.appendChild(note);
+				out.insertBefore(bar, out.children[1]);
+				var text = shareText(steps, avgSkill, avgLuck);
+				shareBtn.addEventListener('click', function () {
+					var data = { title: 'My Wordle analysis', text: text, url: location.href };
+					if (navigator.share) {
+						navigator.share(data).catch(function () {});
+					} else if (navigator.clipboard) {
+						navigator.clipboard.writeText(text + '\n' + location.href).then(function () { note.textContent = 'Copied, paste it anywhere'; });
+					}
+				});
+				imgBtn.addEventListener('click', function () {
+					resultImage(steps, avgSkill, avgLuck).toBlob(function (blob) {
+						var file = new File([blob], 'wordle-report-card.png', { type: 'image/png' });
+						if (navigator.canShare && navigator.canShare({ files: [file] })) {
+							navigator.share({ files: [file], text: text, url: location.href }).catch(function () {});
+							return;
+						}
+						var a = document.createElement('a');
+						a.href = URL.createObjectURL(blob);
+						a.download = 'wordle-report-card.png';
+						a.click();
+						setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+					});
+				});
 				out.appendChild(el('p', 'wm-note', 'Skill compares how many answers your guess would leave on average with the best guess we found. Luck shows how your result compares with the other possible answers.'));
 			}).catch(function () {
 				message(out, 'The word list is not available yet. Please try again later.');
@@ -608,9 +683,11 @@
 		form.addEventListener('focusin', function () { loadWords(form.dataset.src).catch(function () {}); }, { once: true });
 		copyLinkButton(form);
 		var p = params();
-		if (p && p.get('g')) {
-			form.guesses.value = (p.get('g') || '').split('.').filter(function (w) { return /^[a-z]{5}$/.test(w); }).join(' ');
-			form.answer.value = lettersOnly(p.get('a')).slice(0, 5);
+		var shared = p && p.get('s') ? rot13((p.get('s') || '').toLowerCase()).split('-') : null;
+		if (shared || (p && p.get('g'))) {
+			var g = shared ? shared[0] : p.get('g');
+			form.guesses.value = (g || '').split('.').filter(function (w) { return /^[a-z]{5}$/.test(w); }).join(' ');
+			form.answer.value = lettersOnly(shared ? shared[1] : p.get('a')).slice(0, 5);
 			run();
 		}
 	}
@@ -802,7 +879,50 @@
 		render();
 	}
 
+	function initClue(form) {
+		var out = form.querySelector('.wm-results');
+		function pattern() {
+			var v = (form.pattern.value || '').toLowerCase().trim();
+			if (/^\d{1,2}$/.test(v)) { return new Array(Math.min(15, +v) + 1).join('?'); }
+			return v.replace(/[_.\s-]/g, '?').replace(/[^a-z?]/g, '');
+		}
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var p = pattern();
+			var clue = (form.clue.value || '').trim().slice(0, 120);
+			if (p.length < 2) { message(out, 'Type the answer length (e.g. 5) or a pattern like c???e.'); return; }
+			setParams({ clue: clue, p: p });
+			message(out, 'Searching...');
+			fetch(window.wmConfig.rest + '?mode=clue&letters=' + encodeURIComponent(p) + '&clue=' + encodeURIComponent(clue)).then(function (r) {
+				return r.json().then(function (j) { return [r.ok, j]; });
+			}).then(function (res) {
+				if (!res[0]) { message(out, res[1].message || 'Something went wrong.'); return; }
+				var words = res[1].words;
+				out.textContent = '';
+				out.appendChild(el('p', 'wm-count', words.length ? words.length + ' possible answer' + (words.length === 1 ? '' : 's') : 'No match. Try fewer clue words or check the length.'));
+				var ol = el('ol', 'wm-answers');
+				words.forEach(function (w) {
+					var li = el('li');
+					var a = el('a', '', w[0].toUpperCase());
+					a.href = form.dataset.words + w[0] + '/';
+					li.appendChild(a);
+					if (w[1]) { li.appendChild(el('span', 'wm-note', ' ' + w[1])); }
+					ol.appendChild(li);
+				});
+				out.appendChild(ol);
+			}).catch(function () { message(out, 'Network error. Please try again.'); });
+		});
+		copyLinkButton(form);
+		var p = params();
+		if (p && p.get('p')) {
+			form.clue.value = (p.get('clue') || '').slice(0, 120);
+			form.pattern.value = (p.get('p') || '').toLowerCase().replace(/[^a-z?]/g, '').slice(0, 15);
+			form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+		}
+	}
+
 	document.querySelectorAll('[data-wm="analyzer"]').forEach(initAnalyzer);
+	document.querySelectorAll('[data-wm="clue"]').forEach(initClue);
 	document.querySelectorAll('[data-wm="puzzle"]').forEach(initPuzzle);
 	document.querySelectorAll('[data-wm="multi"]').forEach(initMulti);
 	document.querySelectorAll('[data-wm="finder"]').forEach(initFinder);

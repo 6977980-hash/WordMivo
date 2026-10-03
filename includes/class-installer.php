@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Installer {
 
-	const DB_VERSION = '3';
+	const DB_VERSION = '4';
 
 	public static function activate(): void {
 		self::create_tables();
@@ -118,7 +118,8 @@ class Installer {
   word varchar(32) NOT NULL,
   base varchar(32) NOT NULL DEFAULT '',
   defs text NOT NULL,
-  PRIMARY KEY  (word)
+  PRIMARY KEY  (word),
+  FULLTEXT KEY ft_defs (defs)
 ) ENGINE=InnoDB {$charset};"
 		);
 

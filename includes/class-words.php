@@ -74,6 +74,16 @@ class Words {
 		return $out;
 	}
 
+	/** WordNet synonyms stored as the "s:" group. */
+	public static function synonyms( string $defs ): array {
+		foreach ( explode( "\t", $defs ) as $group ) {
+			if ( str_starts_with( $group, 's:' ) ) {
+				return array_values( array_filter( explode( '|', substr( $group, 2 ) ) ) );
+			}
+		}
+		return array();
+	}
+
 	public static function first_definition( object $w ): string {
 		foreach ( $w->meanings as $senses ) {
 			return $senses[0][0];

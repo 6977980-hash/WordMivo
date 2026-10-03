@@ -88,6 +88,19 @@ get_header();
 		<?php endif; ?>
 	</section>
 
+	<?php $synonyms = Words::synonyms( (string) $w->defs ); ?>
+	<?php if ( $synonyms ) : ?>
+	<section class="wm-section" aria-labelledby="wm-syn">
+		<h2 id="wm-syn">Synonyms for <?php echo esc_html( $word ); ?></h2>
+		<?php $links = array_merge( $links, Words::linkable( $synonyms ) ); ?>
+		<ul class="wm-words wm-linked">
+			<?php foreach ( $synonyms as $x ) : ?>
+				<li><?php echo isset( $links[ $x ] ) ? '<a href="' . esc_url( Words::url( $x ) ) . '">' . esc_html( $x ) . '</a>' : esc_html( $x ); ?></li>
+			<?php endforeach; ?>
+		</ul>
+	</section>
+	<?php endif; ?>
+
 	<?php echo Ads::slot( 'top' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 
 	<section class="wm-section" aria-labelledby="wm-facts">

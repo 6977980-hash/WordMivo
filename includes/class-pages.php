@@ -52,6 +52,8 @@ class Pages {
 		'letter-boxed-solver'  => 'Letter Boxed Solver',
 		'quordle-solver'       => 'Quordle & Octordle Solver',
 		'best-wordle-starting-words' => 'Best Wordle Starting Words',
+		'crossword-solver'     => 'Crossword Clue Solver',
+		'word-finder-widget'   => 'Free Word Finder Widget',
 	);
 
 	/** @var array|null Spec for the current request. */
@@ -435,6 +437,8 @@ class Pages {
 				'letter-boxed-solver'  => 'Letter Boxed Solver: Words & Two-Word Solutions',
 				'quordle-solver'       => 'Quordle & Octordle Solver: Best Next Guess',
 				'best-wordle-starting-words' => 'Best Wordle Starting Words, Ranked by Data',
+				'crossword-solver'     => 'Crossword Clue Solver & Reverse Dictionary (Free)',
+				'word-finder-widget'   => 'Free Word Finder & Wordle Solver Widget for Your Website',
 			);
 			return ( $titles[ $spec['x'] ] ?? self::heading( $spec ) ) . ' | WordMivo';
 		}
@@ -468,6 +472,8 @@ class Pages {
 			'wordle-analyzer'      => 'Free Wordle game analysis: enter your guesses and the answer to get a skill and luck score for every guess, and the best guess you could have played.',
 			'spelling-bee-solver'  => 'Enter the seven Spelling Bee letters to see every word, pangrams first, with points for each word.',
 			'letter-boxed-solver'  => 'Enter the 12 Letter Boxed letters side by side to find every playable word and two-word solutions.',
+			'word-finder-widget'   => 'Add a free word finder or Wordle solver to your website or blog: copy one line of code. Fast, ad-free widget that works on phones.',
+			'crossword-solver'     => 'Free crossword clue solver and reverse dictionary: type a clue or a meaning plus the length or known letters (c???e) to find the answer word.',
 			'best-wordle-starting-words' => 'The best Wordle starting words ranked by data: how many answers each opener leaves on average, its worst case, and where CRANE, SLATE and ADIEU rank.',
 			'quordle-solver'       => 'Solve Quordle and Octordle: enter your guesses and colours for each board to see the possible answers and the best next guess for all boards.',
 		);

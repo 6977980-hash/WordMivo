@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+- Crossword clue solver / reverse dictionary (/crossword-solver/): FULLTEXT search over WordNet meanings and synonyms, filtered by length or pattern (c???e); pattern-only search lists common words. DB_VERSION 4 (fulltext index).
+- definitions.tsv now carries WordNet synonyms ("s:" group); word pages show a Synonyms section. Needs one Start import.
+- Wordle analyzer: "Share my result" (emoji summary, no letters) and "Save image" (1080x1080 report card); share links hide the answer (ROT13 ?s=).
+- Embeddable widgets: /embed/finder/{3-8}/ and /embed/wordle/ (noindex, frameable anywhere) and a /word-finder-widget/ page with copy-paste code that includes a credit link.
+- Rack modes now check the blank limit in the handler so clue patterns may use many ? characters.
+
 ## 0.3.2
 - IndexNow: key served at /{key}.txt; new URLs are submitted to Bing/IndexNow in the background after each import and page-set change, and posts/pages on publish. WP-CLI: wp wordmivo indexnow. Skipped on localhost.
 - E-E-A-T: About page "Why I built WordMivo" by Ali Ahmad with LinkedIn; Methodology byline; Organization/Person/AboutPage schema with founder and sameAs.
