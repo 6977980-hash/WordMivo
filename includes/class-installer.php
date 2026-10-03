@@ -28,6 +28,9 @@ class Installer {
 		if ( ! get_option( 'wordmivo_cleanup_done' ) ) {
 			self::cleanup_first_deploy();
 		}
+		if ( ! get_option( 'wordmivo_pages_created' ) ) {
+			add_action( 'init', __NAMESPACE__ . '\\create_standard_pages', 20 );
+		}
 		if ( get_option( 'wordmivo_db_version' ) !== self::DB_VERSION ) {
 			self::create_tables();
 		}
