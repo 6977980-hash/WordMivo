@@ -210,6 +210,9 @@ class Shortcodes {
 		'README.md'                        => array( 'README and licence', 'Column descriptions, method and credit line.', 'text/markdown' ),
 	);
 
+	/** The same dataset published on Kaggle. */
+	const KAGGLE = 'https://www.kaggle.com/datasets/wordpresswordmivo/wordle-word-list-and-five-letter-words-dataset';
+
 	/** Free dataset downloads, with schema.org Dataset markup for Google Dataset Search. */
 	public static function dataset(): string {
 		$base = WORDMIVO_URL . 'assets/dataset/';
@@ -222,6 +225,7 @@ class Shortcodes {
 			$dist[] = array( '@type' => 'DataDownload', 'encodingFormat' => $info[2], 'contentUrl' => $base . $file, 'name' => $info[0] );
 		}
 		$html  .= '</ul>';
+		$html  .= '<p>Also on <a href="' . esc_url( self::KAGGLE ) . '" rel="noopener">Kaggle</a>, where you can preview the files and open them in a notebook.</p>';
 		$html  .= '<h2>How to credit</h2><p>The data is free under <a href="https://creativecommons.org/licenses/by/4.0/" rel="nofollow">CC BY 4.0</a>. Use it in apps, research, articles or games; just add this credit with a link:</p>'
 			. '<textarea class="wm-code" rows="2" readonly aria-label="Credit line to copy" onclick="this.select()">Data: &lt;a href="' . esc_url( home_url( '/' ) ) . '"&gt;WordMivo&lt;/a&gt; (CC BY 4.0)</textarea>';
 		$schema = array(
@@ -235,6 +239,7 @@ class Shortcodes {
 			'creator'             => Seo::organization(),
 			'keywords'            => array( 'Wordle', 'five-letter words', 'word list', 'word frequency', 'Scrabble' ),
 			'distribution'        => $dist,
+			'sameAs'              => array( self::KAGGLE ),
 		);
 		return $html . '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES ) . '</script>';
 	}

@@ -41,4 +41,6 @@ The dataset is released under [Creative Commons Attribution 4.0 (CC BY 4.0)](htt
 
 Frequency ranks are derived from MIT-licensed data; keep the MIT notice above when you redistribute them.
 
+Also on Kaggle: https://www.kaggle.com/datasets/wordpresswordmivo/wordle-word-list-and-five-letter-words-dataset
+
 Updates and more tools: https://wordmivo.com/ · Contact: contact@wordmivo.com
