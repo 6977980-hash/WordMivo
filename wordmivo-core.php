@@ -20,10 +20,21 @@ define( 'WORDMIVO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WORDMIVO_URL', plugin_dir_url( __FILE__ ) );
 
 if ( ! defined( 'WORDMIVO_DATA_DIR' ) ) {
-	// Prefer a folder next to public_html (not web-accessible); can be overridden in wp-config.php.
-	$wordmivo_outside = dirname( untrailingslashit( ABSPATH ) ) . '/wordmivo-data';
-	define( 'WORDMIVO_DATA_DIR', @is_dir( $wordmivo_outside ) ? $wordmivo_outside : WP_CONTENT_DIR . '/wordmivo-data' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors -- open_basedir may forbid the check.
-	unset( $wordmivo_outside );
+	// First match wins: a folder next to public_html, the plugin's own data/ folder
+	// (deployed by Git, web access denied by .htaccess), then wp-content/wordmivo-data.
+	// Can be overridden in wp-config.php.
+	$wordmivo_dirs = array(
+		dirname( untrailingslashit( ABSPATH ) ) . '/wordmivo-data',
+		WORDMIVO_DIR . 'data',
+		WP_CONTENT_DIR . '/wordmivo-data',
+	);
+	foreach ( $wordmivo_dirs as $wordmivo_dir ) {
+		if ( @is_readable( $wordmivo_dir . '/words_alpha.txt' ) || WP_CONTENT_DIR . '/wordmivo-data' === $wordmivo_dir ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors -- open_basedir may forbid the check.
+			define( 'WORDMIVO_DATA_DIR', untrailingslashit( $wordmivo_dir ) );
+			break;
+		}
+	}
+	unset( $wordmivo_dirs, $wordmivo_dir );
 }
 
 require_once WORDMIVO_DIR . 'includes/helpers.php';
