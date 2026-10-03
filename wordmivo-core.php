@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       WordMivo Core
  * Description:       Word finder tools, word database, programmatic word-list pages and SEO for WordMivo. Ships the WordMivo theme.
- * Version:           0.2.2
+ * Version:           0.3.0
  * Requires at least: 6.6
  * Requires PHP:      8.1
  * Author:            WordMivo
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WORDMIVO_VERSION', '0.2.2' );
+define( 'WORDMIVO_VERSION', '0.3.0' );
 define( 'WORDMIVO_FILE', __FILE__ );
 define( 'WORDMIVO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WORDMIVO_URL', plugin_dir_url( __FILE__ ) );
@@ -42,6 +42,7 @@ require_once WORDMIVO_DIR . 'includes/class-installer.php';
 require_once WORDMIVO_DIR . 'includes/content-pages.php';
 require_once WORDMIVO_DIR . 'includes/class-importer.php';
 require_once WORDMIVO_DIR . 'includes/class-pages.php';
+require_once WORDMIVO_DIR . 'includes/class-words.php';
 require_once WORDMIVO_DIR . 'includes/class-rest.php';
 require_once WORDMIVO_DIR . 'includes/class-seo.php';
 require_once WORDMIVO_DIR . 'includes/class-sitemap.php';
@@ -63,6 +64,7 @@ register_deactivation_hook( __FILE__, array( 'WordMivo\\Installer', 'deactivate'
 add_action( 'plugins_loaded', array( 'WordMivo\\Installer', 'maybe_upgrade' ) );
 
 WordMivo\Pages::init();
+WordMivo\Words::init();
 WordMivo\Rest::init();
 WordMivo\Seo::init();
 WordMivo\Sitemap::init();

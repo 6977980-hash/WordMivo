@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+- Word pages at /word/{word}/: meaning (WordNet 3.0), Scrabble score, letter tiles, word facts, anagrams, words you can make, FAQ + DefinedTerm schema. Defined dictionary words are indexable; inflected forms and non-dictionary words are noindex. New sitemap (wp-sitemap-wordmivowords-N.xml), ~23k most common words. Common words on list pages link to their word page.
+- New data file data/definitions.tsv (built from WordNet 3.0; licence in data/WORDNET-LICENSE.txt) and a "defs" import stage. Needs one Start import.
+- Wordle Game Analyzer (/wordle-analyzer/): skill and luck per guess, best guess at each step, shareable link.
+- Spelling Bee solver, Letter Boxed solver (with one/two-word solutions) and Quordle/Octordle solver.
+- Word pages set is switched on once on upgrade.
+
 ## 0.2.2
 - Legal: source licences recorded correctly (Norvig list is MIT via norvig/pytudes; ENABLE public domain).
 - Methodology page states we do not copy any game's official word or answer lists.

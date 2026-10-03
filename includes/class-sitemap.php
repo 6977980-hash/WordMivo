@@ -17,6 +17,9 @@ class Sitemap {
 			static function () {
 				if ( function_exists( 'wp_register_sitemap_provider' ) ) {
 					wp_register_sitemap_provider( 'wordmivo', new Sitemap_Provider() );
+					if ( in_array( 'words', Pages::enabled_sets(), true ) ) {
+						wp_register_sitemap_provider( 'wordmivowords', new Sitemap_Words_Provider() );
+					}
 				}
 			}
 		);
@@ -34,6 +37,36 @@ class Sitemap {
 			$urls[] = array( 'loc' => Pages::url( $spec ) );
 		}
 		return $urls;
+	}
+}
+
+/**
+ * Word pages, most frequent first: defined dictionary words up to Words::SITEMAP_RANK.
+ */
+class Sitemap_Words_Provider extends \WP_Sitemaps_Provider {
+
+	const PER_PAGE = 2000;
+
+	public function __construct() {
+		$this->name        = 'wordmivowords';
+		$this->object_type = 'wordmivowords';
+	}
+
+	private static function from(): string {
+		global $wpdb;
+		return 'FROM ' . defs_table() . ' d JOIN ' . words_table() . " w ON w.word = d.word WHERE d.base = '' AND w.is_valid = 1 AND " . $wpdb->prepare( 'w.freq_rank <= %d', Words::SITEMAP_RANK );
+	}
+
+	public function get_url_list( $page_num, $object_subtype = '' ) {
+		global $wpdb;
+		$words = $wpdb->get_col( 'SELECT d.word ' . self::from() . $wpdb->prepare( ' ORDER BY w.freq_rank LIMIT %d OFFSET %d', self::PER_PAGE, ( max( 1, (int) $page_num ) - 1 ) * self::PER_PAGE ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return array_map( static fn( $w ) => array( 'loc' => Words::url( $w ) ), $words );
+	}
+
+	public function get_max_num_pages( $object_subtype = '' ) {
+		global $wpdb;
+		$n = (int) $wpdb->get_var( 'SELECT COUNT(*) ' . self::from() ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return max( 1, (int) ceil( $n / self::PER_PAGE ) );
 	}
 }
 

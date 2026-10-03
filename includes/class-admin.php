@@ -35,7 +35,8 @@ class Admin {
 		$table = words_table();
 		$words = (int) $wpdb->get_var( "SELECT COUNT(*) FROM (SELECT 1 FROM {$table} LIMIT 1) t" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$flags = (int) $wpdb->get_var( "SELECT COUNT(*) FROM (SELECT 1 FROM {$table} WHERE is_valid = 1 LIMIT 1) t" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $words && ! $flags ) {
+		$defs  = ! is_readable( Importer::defs_path() ) || (int) $wpdb->get_var( 'SELECT COUNT(*) FROM (SELECT 1 FROM ' . defs_table() . ' LIMIT 1) t' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( $words && ( ! $flags || ! $defs ) ) {
 			printf(
 				'<div class="notice notice-warning"><p><strong>WordMivo:</strong> new word data is available. Go to <a href="%s">Tools &gt; WordMivo</a> and click <strong>Start import</strong> once.</p></div>',
 				esc_url( admin_url( 'tools.php?page=' . self::SLUG ) )

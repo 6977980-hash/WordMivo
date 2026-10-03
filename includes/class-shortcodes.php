@@ -4,6 +4,7 @@
  *
  * [wordmivo_finder length="5"] [wordmivo_wordle] [wordmivo_anagram]
  * [wordmivo_unscramble] [wordmivo_scrabble] [wordmivo_wordle_hints]
+ * [wordmivo_analyzer] [wordmivo_bee] [wordmivo_boxed] [wordmivo_multi]
  *
  * @package WordMivo
  */
@@ -23,6 +24,10 @@ class Shortcodes {
 		add_shortcode( 'wordmivo_unscramble', static fn() => self::rack_tool( 'unscramble' ) );
 		add_shortcode( 'wordmivo_scrabble', static fn() => self::rack_tool( 'rack' ) );
 		add_shortcode( 'wordmivo_wordle_hints', array( __CLASS__, 'wordle_hints' ) );
+		add_shortcode( 'wordmivo_analyzer', array( __CLASS__, 'analyzer' ) );
+		add_shortcode( 'wordmivo_bee', array( __CLASS__, 'bee' ) );
+		add_shortcode( 'wordmivo_boxed', array( __CLASS__, 'boxed' ) );
+		add_shortcode( 'wordmivo_multi', array( __CLASS__, 'multi' ) );
 		add_action( 'wp_head', array( __CLASS__, 'print_css' ), 20 );
 		add_action( 'wp_footer', array( __CLASS__, 'print_js' ), 5 );
 	}
@@ -169,6 +174,62 @@ class Shortcodes {
 </form>
 		<?php
 		return (string) ob_get_clean();
+	}
+
+	private static function text_input( string $name, string $label, int $max, string $placeholder = '', string $extra = '' ): string {
+		return sprintf(
+			'<label>%1$s<input type="text" name="%2$s" maxlength="%3$d" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="%4$s"%5$s></label>',
+			esc_html( $label ),
+			esc_attr( $name ),
+			$max,
+			esc_attr( $placeholder ),
+			$extra // Static attributes from this class.
+		);
+	}
+
+	/** Wordle game analyzer: skill and luck per guess. */
+	public static function analyzer(): string {
+		self::$needs_assets = true;
+		return '<form class="wm-tool wm-analyzer" data-wm="analyzer" data-src="' . esc_attr( json_url( 5 ) ) . '">'
+			. '<label>Your guesses, in order<textarea name="guesses" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="crane slate pious"></textarea></label>'
+			. '<div class="wm-row">' . self::text_input( 'answer', "The day's answer", 5, 'e.g. pious' ) . '</div>'
+			. '<p class="wm-note">Tip: leave the answer empty if you solved it; we use your last guess.</p>'
+			. '<div class="wm-actions"><button type="submit" class="wm-btn">Analyze my game</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
+			. '<div class="wm-results" aria-live="polite"></div></form>';
+	}
+
+	/** Spelling Bee solver. */
+	public static function bee(): string {
+		self::$needs_assets = true;
+		return '<form class="wm-tool wm-puzzle" data-wm="puzzle" data-mode="bee" role="search">'
+			. '<div class="wm-row">' . self::text_input( 'center', 'Centre letter', 1, 'e.g. a', ' required pattern="[A-Za-z]"' ) . self::text_input( 'outer', 'The other 6 letters', 6, 'e.g. lpnetc', ' required pattern="[A-Za-z]{6}"' ) . '</div>'
+			. '<div class="wm-actions"><button type="submit" class="wm-btn">Find words</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
+			. '<div class="wm-results" aria-live="polite"></div></form>';
+	}
+
+	/** Letter Boxed solver. */
+	public static function boxed(): string {
+		self::$needs_assets = true;
+		$sides = '';
+		foreach ( array( 'Top', 'Right', 'Bottom', 'Left' ) as $i => $name ) {
+			$sides .= self::text_input( 's' . $i, $name . ' side', 3, array( 'abc', 'def', 'ghi', 'jkl' )[ $i ], ' required pattern="[A-Za-z]{3}"' );
+		}
+		return '<form class="wm-tool wm-puzzle" data-wm="puzzle" data-mode="boxed" role="search">'
+			. '<div class="wm-row wm-sides">' . $sides . '</div>'
+			. '<div class="wm-actions"><button type="submit" class="wm-btn">Solve</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
+			. '<div class="wm-results" aria-live="polite"></div></form>';
+	}
+
+	/** Quordle / Octordle: shared guesses, colours per board. */
+	public static function multi(): string {
+		self::$needs_assets = true;
+		return '<div class="wm-tool wm-multi" data-wm="multi" data-src="' . esc_attr( json_url( 5 ) ) . '">'
+			. '<div class="wm-row"><label>Game<select name="boards"><option value="4">Quordle (4 boards)</option><option value="8">Octordle (8 boards)</option></select></label>'
+			. self::text_input( 'guess', 'Add a guess', 5, 'e.g. crane', ' pattern="[A-Za-z]{5}"' ) . '</div>'
+			. '<p class="wm-help">Add each guess, then tap its tiles on every board to match the colours you got. Boards you solved turn green.</p>'
+			. '<div class="wm-actions"><button type="button" class="wm-btn" data-action="add">Add guess</button><button type="button" class="wm-btn wm-btn-ghost" data-action="undo">Remove last</button><button type="button" class="wm-btn wm-btn-ghost" data-action="copy">Copy link</button></div>'
+			. '<div class="wm-best-multi" aria-live="polite"></div>'
+			. '<div class="wm-boards"></div></div>';
 	}
 
 	public static function wordle_hints(): string {

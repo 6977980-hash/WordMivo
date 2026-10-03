@@ -123,6 +123,90 @@
 		}).sort(function (a, b) { return a[1] - b[1]; }).slice(0, n).map(function (x) { return x[0]; });
 	}
 
+	/**
+	 * Expected answers left after guess g, not counting the case where g is the answer
+	 * (that leaves nothing). Lower is better.
+	 */
+	function expectedLeft(g, answers) {
+		var groups = {};
+		for (var i = 0; i < answers.length; i++) {
+			var k = feedbackKey(g, answers[i]);
+			groups[k] = (groups[k] || 0) + 1;
+		}
+		var sum = 0;
+		for (var key in groups) { if (key !== '22222') { sum += groups[key] * groups[key]; } }
+		return sum / answers.length;
+	}
+
+	/**
+	 * Game analysis. words: JSON rows [word, score, rank, flags]; guesses: list of words;
+	 * answer: the solution. Returns one step per guess with skill and luck out of 99.
+	 */
+	function analyzeGame(words, guesses, answer) {
+		var likelyAll = words.filter(function (w) { return w[3] & LIKELY; }).map(function (w) { return w[0]; });
+		var answerLikely = likelyAll.indexOf(answer) !== -1;
+		var rows = [];
+		var steps = [];
+		guesses.forEach(function (g) {
+			var cands = wordleCandidates(words, rows).filter(function (w) { return !answerLikely || (w[3] & LIKELY); }).map(function (w) { return w[0]; });
+			if (cands.indexOf(answer) === -1) { cands.push(answer); }
+			var fb = checkGuess(g, answer);
+			var pool = likelyAll.concat(cands);
+			var picks = bestGuesses(cands, pool, 3);
+			var bestE = Infinity;
+			picks.forEach(function (p) { bestE = Math.min(bestE, expectedLeft(p, cands)); });
+			var userE = expectedLeft(g, cands);
+			bestE = Math.min(bestE, userE);
+			var key = fb.map(function (c) { return c === 'green' ? '2' : c === 'yellow' ? '1' : '0'; }).join('');
+			var left = key === '22222' ? [] : cands.filter(function (w) { return feedbackKey(g, w) === key; });
+			// Luck: share of possible answers that would have left more words than this one did.
+			var worse = 0, same = 0;
+			var sizes = {};
+			cands.forEach(function (w) { var k = feedbackKey(g, w); sizes[k] = (sizes[k] || 0) + 1; });
+			cands.forEach(function (w) {
+				var k = feedbackKey(g, w);
+				var n = k === '22222' ? 0 : sizes[k];
+				if (n > left.length) { worse++; } else if (n === left.length) { same++; }
+			});
+			steps.push({
+				guess: g,
+				colours: fb,
+				before: cands.length,
+				after: left.length,
+				solved: key === '22222',
+				skill: Math.round(99 * (1 + bestE) / (1 + userE)),
+				luck: cands.length > 1 ? Math.round(99 * (worse + same / 2) / cands.length) : 50,
+				best: picks[0] || g
+			});
+			rows.push([g, fb]);
+		});
+		return steps;
+	}
+
+	/**
+	 * Best next guess for several boards at once (Quordle/Octordle): a board with one
+	 * answer left is finished first; otherwise the guess with the fewest expected
+	 * answers left summed over the unsolved boards.
+	 */
+	function bestMulti(answerSets, pool, n) {
+		var open = answerSets.filter(function (a) { return a.length; });
+		var single = open.filter(function (a) { return a.length === 1; }).map(function (a) { return a[0]; });
+		if (single.length) { return single.slice(0, n); }
+		if (!open.length) { return []; }
+		var union = [];
+		open.forEach(function (a) { union = union.concat(a); });
+		var score = letterScore(union);
+		var size = Math.max(40, Math.min(pool.length, Math.floor(300000 / union.length)));
+		var seen = {};
+		var trimmed = pool.concat(union).filter(function (w) { if (seen[w]) { return false; } seen[w] = 1; return true; })
+			.sort(function (a, b) { return score(b) - score(a); }).slice(0, size);
+		return trimmed.map(function (g) {
+			var t = 0;
+			open.forEach(function (a) { t += expectedLeft(g, a); });
+			return [g, t];
+		}).sort(function (a, b) { return a[1] - b[1]; }).slice(0, n).map(function (x) { return x[0]; });
+	}
+
 	/* Share links: pattern helpers kept pure for tests. */
 	function encodeGuesses(rows) {
 		var codes = { gray: '0', yellow: '1', green: '2' };
@@ -141,6 +225,9 @@
 		finderFilter: finderFilter,
 		wordleCandidates: wordleCandidates,
 		bestGuesses: bestGuesses,
+		expectedLeft: expectedLeft,
+		analyzeGame: analyzeGame,
+		bestMulti: bestMulti,
 		encodeGuesses: encodeGuesses,
 		decodeGuesses: decodeGuesses
 	};
@@ -460,6 +547,264 @@
 		}
 	}
 
+	function tileRow(word, colours, cls) {
+		var row = el('div', 'wm-guess ' + (cls || ''));
+		for (var i = 0; i < 5; i++) {
+			var t = el('span', 'wm-tile', word[i].toUpperCase());
+			t.dataset.state = colours[i];
+			row.appendChild(t);
+		}
+		return row;
+	}
+
+	function wordsIn(text) {
+		return (text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length === 5; }).slice(0, 6);
+	}
+
+	function initAnalyzer(form) {
+		var out = form.querySelector('.wm-results');
+		function run() {
+			var guesses = wordsIn(form.guesses.value);
+			var answer = lettersOnly(form.answer.value);
+			if (!answer && guesses.length) { answer = guesses[guesses.length - 1]; }
+			if (!guesses.length || answer.length !== 5) {
+				message(out, 'Type at least one five-letter guess and the answer.');
+				return;
+			}
+			setParams({ g: guesses.join('.'), a: answer });
+			message(out, 'Analyzing...');
+			loadWords(form.dataset.src).then(function (words) {
+				return new Promise(function (resolve) { setTimeout(function () { resolve(words); }, 30); });
+			}).then(function (words) {
+				var steps = analyzeGame(words, guesses, answer);
+				out.textContent = '';
+				var skill = 0, luck = 0;
+				steps.forEach(function (st, i) {
+					var card = el('div', 'wm-step');
+					card.appendChild(tileRow(st.guess, st.colours));
+					var p = el('p', 'wm-step-text');
+					p.appendChild(el('strong', '', 'Guess ' + (i + 1) + ': '));
+					p.appendChild(document.createTextNode(st.solved ? 'Solved! ' : st.before + ' possible answers before, ' + st.after + ' after. '));
+					card.appendChild(p);
+					var m = el('p', 'wm-scores');
+					m.appendChild(el('span', 'wm-score', 'Skill ' + st.skill + '/99'));
+					m.appendChild(el('span', 'wm-score', 'Luck ' + st.luck + '/99'));
+					card.appendChild(m);
+					if (!st.solved && st.best !== st.guess) {
+						card.appendChild(el('p', 'wm-note', 'Our pick here: ' + st.best.toUpperCase()));
+					}
+					out.appendChild(card);
+					skill += st.skill;
+					luck += st.luck;
+				});
+				var sum = el('p', 'wm-count', 'Overall: skill ' + Math.round(skill / steps.length) + '/99, luck ' + Math.round(luck / steps.length) + '/99' + (steps[steps.length - 1].solved ? ', solved in ' + steps.length + '.' : '.'));
+				out.insertBefore(sum, out.firstChild);
+				out.appendChild(el('p', 'wm-note', 'Skill compares how many answers your guess would leave on average with the best guess we found. Luck shows how your result compares with the other possible answers.'));
+			}).catch(function () {
+				message(out, 'The word list is not available yet. Please try again later.');
+			});
+		}
+		form.addEventListener('submit', function (e) { e.preventDefault(); run(); });
+		form.addEventListener('focusin', function () { loadWords(form.dataset.src).catch(function () {}); }, { once: true });
+		copyLinkButton(form);
+		var p = params();
+		if (p && p.get('g')) {
+			form.guesses.value = (p.get('g') || '').split('.').filter(function (w) { return /^[a-z]{5}$/.test(w); }).join(' ');
+			form.answer.value = lettersOnly(p.get('a')).slice(0, 5);
+			run();
+		}
+	}
+
+	function initPuzzle(form) {
+		var out = form.querySelector('.wm-results');
+		var mode = form.dataset.mode;
+		function value() {
+			if (mode === 'bee') { return lettersOnly(form.center.value).slice(0, 1) + lettersOnly(form.outer.value).slice(0, 6); }
+			return [0, 1, 2, 3].map(function (i) { return lettersOnly(form['s' + i].value).slice(0, 3); }).join(',');
+		}
+		function fill(v) {
+			if (mode === 'bee') {
+				form.center.value = v.slice(0, 1);
+				form.outer.value = v.slice(1, 7);
+			} else {
+				v.split(',').forEach(function (side, i) { if (form['s' + i]) { form['s' + i].value = side; } });
+			}
+		}
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var letters = value();
+			var plain = letters.replace(/,/g, '');
+			var need = mode === 'bee' ? 7 : 12;
+			var unique = plain.split('').filter(function (l, i) { return plain.indexOf(l) === i; });
+			if (plain.length !== need || unique.length !== need) {
+				message(out, 'Enter ' + need + ' different letters.');
+				return;
+			}
+			setParams({ letters: letters });
+			message(out, 'Searching...');
+			fetch(window.wmConfig.rest + '?mode=' + mode + '&letters=' + encodeURIComponent(letters)).then(function (r) {
+				return r.json().then(function (j) { return [r.ok, j]; });
+			}).then(function (res) {
+				if (!res[0]) { message(out, res[1].message || 'Something went wrong.'); return; }
+				var d = res[1];
+				out.textContent = '';
+				if (mode === 'bee') {
+					var pangrams = d.words.filter(function (w) { return w[2]; });
+					var total = d.words.reduce(function (t, w) { return t + w[1]; }, 0);
+					out.appendChild(el('p', 'wm-count', d.count + ' words, ' + pangrams.length + ' pangram' + (pangrams.length === 1 ? '' : 's') + ', ' + total + ' points in all'));
+					if (pangrams.length) {
+						out.appendChild(el('h3', '', 'Pangrams'));
+						renderList(out, pangrams, 50);
+					}
+					var groups = {};
+					d.words.filter(function (w) { return !w[2]; }).forEach(function (w) { (groups[w[0].length] = groups[w[0].length] || []).push(w); });
+					Object.keys(groups).sort(function (a, b) { return b - a; }).forEach(function (len) {
+						out.appendChild(el('h3', '', len + ' letters'));
+						renderList(out, groups[len], 200);
+					});
+					out.appendChild(el('p', 'wm-note', 'Numbers show Spelling Bee points. The puzzle uses its own word list, so a few words here may not be accepted and a few accepted words may be missing.'));
+				} else {
+					if (d.solutions.length) {
+						out.appendChild(el('h3', '', 'Solutions'));
+						var ol = el('ol', 'wm-solutions');
+						d.solutions.forEach(function (s) { ol.appendChild(el('li', '', s.join(' → ').toUpperCase())); });
+						out.appendChild(ol);
+					} else {
+						out.appendChild(el('p', 'wm-note', 'No one- or two-word solution found with our word list.'));
+					}
+					out.appendChild(el('h3', '', d.count + ' playable words'));
+					renderList(out, d.words, 200);
+					out.appendChild(el('p', 'wm-note', 'Numbers show how many of the 12 letters each word uses.'));
+				}
+			}).catch(function () { message(out, 'Network error. Please try again.'); });
+		});
+		copyLinkButton(form);
+		var p = params();
+		var saved = p ? (p.get('letters') || '').toLowerCase().replace(/[^a-z,]/g, '') : '';
+		if (saved) {
+			fill(saved);
+			form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+		}
+	}
+
+	function initMulti(wrap) {
+		var boardsBox = wrap.querySelector('.wm-boards');
+		var best = wrap.querySelector('.wm-best-multi');
+		var select = wrap.querySelector('select[name="boards"]');
+		var input = wrap.querySelector('input[name="guess"]');
+		var guesses = [];
+		var colours = []; // colours[board][guess] = ['gray', ...]
+
+		function nBoards() { return +select.value; }
+		function solvedAt(b) {
+			for (var g = 0; g < guesses.length; g++) {
+				if (colours[b][g].every(function (c) { return c === 'green'; })) { return g; }
+			}
+			return -1;
+		}
+		function share() {
+			var codes = { gray: '0', yellow: '1', green: '2' };
+			setParams(guesses.length ? {
+				b: String(nBoards()),
+				g: guesses.join('.'),
+				c: colours.slice(0, nBoards()).map(function (bc) { return bc.map(function (r) { return r.map(function (c) { return codes[c]; }).join(''); }).join(''); }).join('-')
+			} : {});
+		}
+		function render() {
+			while (colours.length < 8) { colours.push([]); }
+			colours.forEach(function (bc) { while (bc.length < guesses.length) { bc.push(['gray', 'gray', 'gray', 'gray', 'gray']); } bc.length = guesses.length; });
+			boardsBox.textContent = '';
+			boardsBox.className = 'wm-boards wm-boards-' + nBoards();
+			for (var b = 0; b < nBoards(); b++) {
+				var board = el('div', 'wm-board');
+				var done = solvedAt(b);
+				board.appendChild(el('p', 'wm-board-title', 'Board ' + (b + 1) + (done !== -1 ? ': solved' : '')));
+				if (done !== -1) { board.classList.add('wm-board-done'); }
+				guesses.forEach(function (g, gi) {
+					if (done !== -1 && gi > done) { return; }
+					var row = el('div', 'wm-guess');
+					for (var i = 0; i < 5; i++) {
+						var t = el('button', 'wm-tile', g[i].toUpperCase());
+						t.type = 'button';
+						t.dataset.state = colours[b][gi][i];
+						t.setAttribute('aria-label', 'Board ' + (b + 1) + ', guess ' + (gi + 1) + ', letter ' + (i + 1) + ', ' + colours[b][gi][i]);
+						(function (bb, gg, ii) {
+							t.addEventListener('click', function () {
+								colours[bb][gg][ii] = STATES[(STATES.indexOf(colours[bb][gg][ii]) + 1) % 3];
+								render();
+								var again = boardsBox.querySelectorAll('.wm-board')[bb];
+								var tile = again && again.querySelectorAll('.wm-guess')[gg];
+								if (tile) { tile.children[ii].focus(); }
+							});
+						})(b, gi, i);
+						row.appendChild(t);
+					}
+					board.appendChild(row);
+				});
+				board.appendChild(el('div', 'wm-board-words'));
+				boardsBox.appendChild(board);
+			}
+			share();
+			solve();
+		}
+		function solve() {
+			if (!guesses.length) { best.textContent = ''; return; }
+			loadWords(wrap.dataset.src).then(function (words) {
+				var likelyAll = words.filter(function (w) { return w[3] & LIKELY; }).map(function (w) { return w[0]; });
+				var sets = [];
+				var boards = boardsBox.querySelectorAll('.wm-board');
+				for (var b = 0; b < nBoards(); b++) {
+					var box = boards[b].querySelector('.wm-board-words');
+					box.textContent = '';
+					if (solvedAt(b) !== -1) { sets.push([]); continue; }
+					var rows = guesses.map(function (g, gi) { return [g, colours[b][gi]]; });
+					var cands = wordleCandidates(words, rows);
+					var likely = cands.filter(function (w) { return w[3] & LIKELY; });
+					var show = likely.length ? likely : cands;
+					sets.push(show.map(function (w) { return w[0]; }));
+					box.appendChild(el('p', 'wm-count', show.length + ' possible'));
+					renderList(box, show, 12);
+				}
+				var picks = bestMulti(sets, likelyAll, 3);
+				best.textContent = '';
+				if (picks.length) {
+					best.appendChild(el('p', 'wm-best', 'Best next guess: ' + picks.map(function (w) { return w.toUpperCase(); }).join(', ')));
+				}
+			}).catch(function () { best.textContent = 'The word list is not available yet.'; });
+		}
+		function add() {
+			var g = lettersOnly(input.value);
+			if (g.length !== 5 || guesses.length >= (nBoards() === 8 ? 13 : 9)) { input.focus(); return; }
+			guesses.push(g);
+			input.value = '';
+			render();
+			input.focus();
+		}
+		wrap.querySelector('[data-action="add"]').addEventListener('click', add);
+		input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+		wrap.querySelector('[data-action="undo"]').addEventListener('click', function () { guesses.pop(); render(); });
+		select.addEventListener('change', render);
+		wrap.addEventListener('focusin', function () { loadWords(wrap.dataset.src).catch(function () {}); }, { once: true });
+		copyLinkButton(wrap);
+
+		var p = params();
+		if (p && p.get('g')) {
+			var names = ['gray', 'yellow', 'green'];
+			if (p.get('b') === '8') { select.value = '8'; }
+			guesses = (p.get('g') || '').split('.').filter(function (w) { return /^[a-z]{5}$/.test(w); }).slice(0, 13);
+			(p.get('c') || '').split('-').slice(0, 8).forEach(function (s, b) {
+				colours[b] = guesses.map(function (g, gi) {
+					var part = s.slice(gi * 5, gi * 5 + 5);
+					return /^[012]{5}$/.test(part) ? part.split('').map(function (d) { return names[+d]; }) : ['gray', 'gray', 'gray', 'gray', 'gray'];
+				});
+			});
+		}
+		render();
+	}
+
+	document.querySelectorAll('[data-wm="analyzer"]').forEach(initAnalyzer);
+	document.querySelectorAll('[data-wm="puzzle"]').forEach(initPuzzle);
+	document.querySelectorAll('[data-wm="multi"]').forEach(initMulti);
 	document.querySelectorAll('[data-wm="finder"]').forEach(initFinder);
 	document.querySelectorAll('[data-wm="wordle"]').forEach(initWordle);
 	document.querySelectorAll('[data-wm="rack"]').forEach(initRack);

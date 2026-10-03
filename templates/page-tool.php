@@ -41,6 +41,34 @@ $content = array(
 		'how'   => array( 'Type your tiles, using ? for a blank.', 'Press "Find words".', 'Blank tiles score zero, as in the game.' ),
 		'more'  => 'Scores are base tile values, before board bonuses.',
 	),
+	'wordle-analyzer'      => array(
+		'tool'  => '[wordmivo_analyzer]',
+		'intro' => 'Find out how well you really played. Enter your Wordle guesses and the answer, and get a skill and luck score for every guess, plus the guess we would have played.',
+		'how'   => array(
+			'Type your guesses in the order you played them.',
+			"Type the day's answer (or leave it empty if your last guess was right).",
+			'Press "Analyze my game" to see how many answers each guess ruled out.',
+		),
+		'more'  => 'Skill is 99 when your guess was as good as the best one we found. Luck is high when the colours you got left fewer answers than most other answers would have. Wordle is a trademark of The New York Times Company; this analyzer is an independent tool.',
+	),
+	'spelling-bee-solver'  => array(
+		'tool'  => '[wordmivo_bee]',
+		'intro' => 'Stuck on the Spelling Bee? Enter the centre letter and the six outer letters to see every word, pangrams first, with points.',
+		'how'   => array( 'Type the centre (yellow) letter.', 'Type the six outer letters.', 'Press "Find words". Pangrams use all seven letters and score 7 bonus points.' ),
+		'more'  => 'Words are at least four letters long and always use the centre letter; letters can repeat. Spelling Bee is a trademark of The New York Times Company; this solver is an independent tool.',
+	),
+	'letter-boxed-solver'  => array(
+		'tool'  => '[wordmivo_boxed]',
+		'intro' => 'Enter the three letters on each side of the Letter Boxed square to find every playable word and the shortest solutions that use all 12 letters.',
+		'how'   => array( 'Type the three letters on each side.', 'Press "Solve".', 'Solutions chain words: each word starts with the last letter of the one before.' ),
+		'more'  => 'Consecutive letters in a word never come from the same side. Letter Boxed is a trademark of The New York Times Company; this solver is an independent tool.',
+	),
+	'quordle-solver'       => array(
+		'tool'  => '[wordmivo_multi]',
+		'intro' => 'Solve Quordle and Octordle faster: add each guess once, set its colours on every board, and see the possible answers for each board and the best next guess for all of them.',
+		'how'   => array( 'Choose Quordle (4 boards) or Octordle (8 boards).', 'Add your guess, then tap tiles on each board to match the colours.', 'Follow "Best next guess" or pick from each board\'s list.' ),
+		'more'  => 'When a board has one answer left, we suggest finishing it first. Quordle is owned by Merriam-Webster; this solver is an independent tool.',
+	),
 	'todays-wordle-hints'  => array(
 		'tool'  => '[wordmivo_wordle_hints]',
 		'intro' => "Stuck on today's Wordle? Open the hints one at a time. The answer stays hidden until you choose to reveal it.",

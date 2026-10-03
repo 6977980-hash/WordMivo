@@ -27,9 +27,10 @@ class Pages {
 		'position' => 'Letter in 2nd/3rd/4th position (5 letters)',
 		'special'  => 'No vowels / double letters / three vowels (4-6 letters)',
 		'bigram'   => 'Starting/ending with letter pairs (5 letters)',
+		'words'    => 'Word pages (/word/crane/: meaning, Scrabble score, anagrams)',
 	);
 
-	const DEFAULT_SETS = array( 'hubs', 'starts', 'ends', 'tools' );
+	const DEFAULT_SETS = array( 'hubs', 'starts', 'ends', 'tools', 'words' );
 
 	const SPECIALS = array(
 		'with-no-vowels'      => 'with No Vowels',
@@ -46,6 +47,10 @@ class Pages {
 		'word-unscrambler'     => 'Word Unscrambler',
 		'scrabble-word-finder' => 'Scrabble Word Finder',
 		'todays-wordle-hints'  => "Today's Wordle Hints",
+		'wordle-analyzer'      => 'Wordle Game Analyzer',
+		'spelling-bee-solver'  => 'Spelling Bee Solver',
+		'letter-boxed-solver'  => 'Letter Boxed Solver',
+		'quordle-solver'       => 'Quordle & Octordle Solver',
 	);
 
 	/** @var array|null Spec for the current request. */
@@ -140,6 +145,8 @@ class Pages {
 		switch ( $spec['type'] ) {
 			case 'hub':
 				return 'hubs';
+			case 'word':
+				return 'words';
 			case 'tool':
 				return 'tools';
 			case 'starts':
@@ -153,6 +160,9 @@ class Pages {
 	/** Known spec (part of all_specs) in an enabled set? */
 	public static function is_served( array $spec ): bool {
 		static $known = null;
+		if ( 'word' === $spec['type'] ) {
+			return in_array( 'words', self::enabled_sets(), true ) && Words::get( $spec['x'] );
+		}
 		if ( null === $known ) {
 			$known = array_flip( array_map( array( __CLASS__, 'key' ), self::all_specs() ) );
 		}
@@ -188,7 +198,7 @@ class Pages {
 			wp_safe_redirect( home_url( '/' ), 301 );
 			exit;
 		}
-		if ( ! self::is_served( $spec ) || ( 'tool' !== $spec['type'] && 'hub' !== $spec['type'] && 0 === self::count( $spec ) ) ) {
+		if ( ! self::is_served( $spec ) || ( ! in_array( $spec['type'], array( 'tool', 'hub', 'word' ), true ) && 0 === self::count( $spec ) ) ) {
 			global $wp_query;
 			$wp_query->set_404();
 			status_header( 404 );
@@ -209,13 +219,18 @@ class Pages {
 		if ( ! self::$current ) {
 			return $template;
 		}
-		return 'tool' === self::$current['type']
-			? WORDMIVO_DIR . 'templates/page-tool.php'
-			: WORDMIVO_DIR . 'templates/page-list.php';
+		$templates = array(
+			'tool' => 'page-tool.php',
+			'word' => 'page-word.php',
+		);
+		return WORDMIVO_DIR . 'templates/' . ( $templates[ self::$current['type'] ] ?? 'page-list.php' );
 	}
 
 	public static function url( array $spec ): string {
 		$spec = self::normalize( $spec );
+		if ( 'word' === $spec['type'] ) {
+			return Words::url( $spec['x'] );
+		}
 		$n    = $spec['len'];
 		switch ( $spec['type'] ) {
 			case 'hub':
@@ -313,6 +328,10 @@ class Pages {
 	}
 
 	public static function is_indexable( array $spec ): bool {
+		if ( 'word' === $spec['type'] ) {
+			$w = Words::get( $spec['x'] );
+			return $w && Words::is_indexable( $w );
+		}
 		return 'tool' === $spec['type'] || 'hub' === $spec['type'] || self::count( $spec ) >= self::MIN_INDEXABLE;
 	}
 
@@ -384,6 +403,8 @@ class Pages {
 				return "{$n} Letter Words " . self::SPECIALS[ $spec['x'] ];
 			case 'tool':
 				return self::TOOLS[ $spec['x'] ];
+			case 'word':
+				return ucfirst( $spec['x'] );
 		}
 		return '';
 	}
@@ -398,6 +419,9 @@ class Pages {
 	}
 
 	public static function title( array $spec ): string {
+		if ( 'word' === $spec['type'] ) {
+			return Words::title( Words::get( $spec['x'] ) );
+		}
 		if ( 'tool' === $spec['type'] ) {
 			return self::heading( $spec ) . ' | WordMivo';
 		}
@@ -410,6 +434,8 @@ class Pages {
 	public static function description( array $spec ): string {
 		$n = self::number_word( (int) $spec['len'] );
 		switch ( $spec['type'] ) {
+			case 'word':
+				return Words::description( Words::get( $spec['x'] ) );
 			case 'hub':
 				return "Find {$n}-letter words fast. Filter by known letters, positions and excluded letters, with common words first. Great for Wordle, Scrabble and crosswords.";
 			case 'tool':
@@ -426,6 +452,10 @@ class Pages {
 			'word-unscrambler'     => 'Unscramble letters into every word you can make, grouped by length and sorted by score.',
 			'scrabble-word-finder' => 'Find the best Scrabble words from your rack, including up to two blank tiles, with scores.',
 			'todays-wordle-hints'  => "Spoiler-free hints for today's Wordle, with the answer hidden until you choose to reveal it.",
+			'wordle-analyzer'      => 'Free Wordle game analysis: enter your guesses and the answer to get a skill and luck score for every guess, and the best guess you could have played.',
+			'spelling-bee-solver'  => 'Enter the seven Spelling Bee letters to see every word, pangrams first, with points for each word.',
+			'letter-boxed-solver'  => 'Enter the 12 Letter Boxed letters side by side to find every playable word and two-word solutions.',
+			'quordle-solver'       => 'Solve Quordle and Octordle: enter your guesses and colours for each board to see the possible answers and the best next guess for all boards.',
 		);
 		return $map[ $tool ] ?? '';
 	}
@@ -435,6 +465,9 @@ class Pages {
 	 * Answers lead with the fact so search and AI answers can quote them.
 	 */
 	public static function faq( array $spec ): array {
+		if ( 'word' === $spec['type'] ) {
+			return Words::faq( Words::get( $spec['x'] ) );
+		}
 		$n     = (int) $spec['len'];
 		$words = self::words( $spec );
 		$total = number_format_i18n( $words['total'] );

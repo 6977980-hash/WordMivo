@@ -48,6 +48,11 @@ function words_table(): string {
 	return $wpdb->prefix . 'wm_words';
 }
 
+function defs_table(): string {
+	global $wpdb;
+	return $wpdb->prefix . 'wm_defs';
+}
+
 function sources_table(): string {
 	global $wpdb;
 	return $wpdb->prefix . 'wm_sources';

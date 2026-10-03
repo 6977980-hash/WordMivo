@@ -47,3 +47,18 @@ assert.deepStrictEqual(decodeGuesses('crane02102.bad'), rows);
 // Best guess splits the answers; with 2 answers it returns them.
 assert.deepStrictEqual(bestGuesses(['crane', 'crate'], ['crane', 'crate'], 5), ['crane', 'crate']);
 console.log('extra tests passed');
+
+// Game analyzer: solving in one is perfect skill; steps carry before/after counts.
+{
+	const W = require('../assets/js/wordmivo.js');
+	const words = [['crane', 1, 1, 3], ['crate', 1, 2, 3], ['trace', 1, 3, 3], ['slate', 1, 4, 3], ['pious', 1, 5, 3]];
+	const steps = W.analyzeGame(words, ['crane', 'pious'], 'pious');
+	assert.strictEqual(steps.length, 2);
+	assert.strictEqual(steps[1].solved, true);
+	assert.strictEqual(steps[0].after, 1); // only pious fits all-gray CRANE
+	assert.ok(steps[0].skill > 0 && steps[0].skill <= 99);
+	// Multi-board: a board with one answer left is finished first.
+	assert.deepStrictEqual(W.bestMulti([['crane'], ['slate', 'crate']], ['trace'], 1), ['crane']);
+	assert.strictEqual(W.expectedLeft('crane', ['crane']), 0);
+	console.log('analyzer tests passed');
+}

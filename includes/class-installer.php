@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Installer {
 
-	const DB_VERSION = '2';
+	const DB_VERSION = '3';
 
 	public static function activate(): void {
 		self::create_tables();
@@ -34,6 +34,15 @@ class Installer {
 		if ( get_option( 'wordmivo_db_version' ) !== self::DB_VERSION ) {
 			self::create_tables();
 		}
+		// Word pages arrived in 0.3.0: switch them on once; the admin can turn them off.
+		if ( ! get_option( 'wordmivo_words_set_added' ) ) {
+			$sets = Pages::enabled_sets();
+			if ( ! in_array( 'words', $sets, true ) ) {
+				$sets[] = 'words';
+				update_option( 'wordmivo_page_sets', $sets );
+			}
+			update_option( 'wordmivo_words_set_added', 1 );
+		}
 		// A Git deploy updates files without re-running activation.
 		if ( get_option( 'wordmivo_rewrite_version' ) !== WORDMIVO_VERSION ) {
 			add_action(
@@ -54,6 +63,7 @@ class Installer {
 		$charset = $wpdb->get_charset_collate();
 		$words   = words_table();
 		$sources = sources_table();
+		$defs    = defs_table();
 
 		// dbDelta needs two spaces after PRIMARY KEY and one field per line.
 		dbDelta(
@@ -89,6 +99,16 @@ class Installer {
   sha256 char(64) NOT NULL,
   acquired_at datetime NOT NULL,
   PRIMARY KEY  (id)
+) ENGINE=InnoDB {$charset};"
+		);
+
+		// WordNet definitions; base is set instead for inflected forms (cranes -> crane).
+		dbDelta(
+			"CREATE TABLE {$defs} (
+  word varchar(32) NOT NULL,
+  base varchar(32) NOT NULL DEFAULT '',
+  defs text NOT NULL,
+  PRIMARY KEY  (word)
 ) ENGINE=InnoDB {$charset};"
 		);
 

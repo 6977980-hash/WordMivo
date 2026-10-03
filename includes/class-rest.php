@@ -2,7 +2,9 @@
 /**
  * REST endpoint for rack-based solvers: anagram, unscramble, Scrabble rack.
  *
- * GET /wp-json/wordmivo/v1/words?mode=anagram|unscramble|rack&letters=abc?
+ * GET /wp-json/wordmivo/v1/words?mode=anagram|unscramble|rack|bee|boxed&letters=abc?
+ *
+ * bee: 7 letters, the first is the centre letter. boxed: 12 letters, three per side.
  *
  * @package WordMivo
  */
@@ -32,7 +34,7 @@ class Rest {
 					'mode'    => array(
 						'required' => true,
 						'type'     => 'string',
-						'enum'     => array( 'anagram', 'unscramble', 'rack' ),
+						'enum'     => array( 'anagram', 'unscramble', 'rack', 'bee', 'boxed' ),
 					),
 					'letters' => array(
 						'required'          => true,
@@ -47,6 +49,9 @@ class Rest {
 
 	public static function validate_letters( $value ) {
 		$value = strtolower( (string) $value );
+		if ( preg_match( '/^[a-z]{3}(,[a-z]{3}){3}$|^[a-z]{7}$/', $value ) ) {
+			return true; // Letter Boxed sides or Spelling Bee letters; checked per mode later.
+		}
 		if ( ! preg_match( '/^[a-z?]{2,' . MAX_RACK . '}$/', $value ) ) {
 			return new \WP_Error( 'wordmivo_letters', 'Use 2-15 letters a-z, with ? for a blank.', array( 'status' => 400 ) );
 		}
@@ -70,6 +75,9 @@ class Rest {
 		}
 		$mode    = $request['mode'];
 		$letters = $request['letters'];
+		if ( 'bee' === $mode || 'boxed' === $mode ) {
+			return self::puzzle( $mode, $letters );
+		}
 		if ( 'anagram' === $mode && str_contains( $letters, '?' ) ) {
 			$mode = 'rack';
 		}
@@ -84,6 +92,104 @@ class Rest {
 		);
 		$response->header( 'Cache-Control', 'public, max-age=86400' );
 		return $response;
+	}
+
+	private static function puzzle( string $mode, string $letters ) {
+		$letters = preg_replace( '/[^a-z]/', '', $letters );
+		$need    = 'bee' === $mode ? 7 : 12;
+		if ( strlen( $letters ) !== $need || count( array_unique( str_split( $letters ) ) ) !== $need ) {
+			return new \WP_Error( 'wordmivo_letters', sprintf( 'Enter %d different letters.', $need ), array( 'status' => 400 ) );
+		}
+		$data     = 'bee' === $mode ? self::spelling_bee( $letters ) : self::letter_boxed( $letters );
+		$response = rest_ensure_response( array_merge( array( 'mode' => $mode, 'letters' => $letters ), $data ) );
+		$response->header( 'Cache-Control', 'public, max-age=86400' );
+		return $response;
+	}
+
+	/**
+	 * Spelling Bee: words of 4+ letters using only the 7 letters and always the centre
+	 * (first) letter. Points: 1 for 4 letters, else one per letter, +7 for a pangram.
+	 */
+	public static function spelling_bee( string $letters ): array {
+		global $wpdb;
+		$table   = words_table();
+		$all     = letter_mask( $letters );
+		$outside = ~$all & 0x3FFFFFF;
+		$rows    = $wpdb->get_results( $wpdb->prepare( "SELECT word, letter_mask FROM {$table} WHERE len >= 4 AND is_valid = 1 AND (letter_mask & %d) = 0 AND (letter_mask & %d) <> 0 ORDER BY freq_rank IS NULL, freq_rank LIMIT %d", $outside, letter_bit( $letters[0] ), self::MAX_RESULTS ), ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$out     = array();
+		foreach ( $rows as $r ) {
+			$pangram = (int) $r[1] === $all;
+			$points  = 4 === strlen( $r[0] ) ? 1 : strlen( $r[0] );
+			$out[]   = array( $r[0], $points + ( $pangram ? 7 : 0 ), $pangram ? 1 : 0 );
+		}
+		usort( $out, static fn( $a, $b ) => array( $b[2], strlen( $b[0] ) ) <=> array( $a[2], strlen( $a[0] ) ) );
+		return array(
+			'count' => count( $out ),
+			'words' => $out,
+		);
+	}
+
+	/**
+	 * Letter Boxed: words of 3+ letters from the 12 letters where consecutive letters
+	 * never come from the same side; plus one- and two-word solutions that use all 12.
+	 */
+	public static function letter_boxed( string $letters ): array {
+		global $wpdb;
+		$table = words_table();
+		$side  = array();
+		foreach ( str_split( $letters ) as $i => $l ) {
+			$side[ $l ] = intdiv( $i, 3 );
+		}
+		$all   = letter_mask( $letters );
+		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT word, letter_mask, freq_rank FROM {$table} WHERE len >= 3 AND is_valid = 1 AND (letter_mask & %d) = 0", ~$all & 0x3FFFFFF ), ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$words = array();
+		foreach ( $rows as $r ) {
+			$w  = $r[0];
+			$ok = true;
+			for ( $i = 1, $n = strlen( $w ); $i < $n; $i++ ) {
+				if ( $side[ $w[ $i ] ] === $side[ $w[ $i - 1 ] ] ) {
+					$ok = false;
+					break;
+				}
+			}
+			if ( $ok ) {
+				$words[] = array( $w, (int) $r[1], $r[2] ? (int) $r[2] : 1000000 );
+			}
+		}
+		// Solutions: chains where each word starts with the previous word's last letter.
+		$by_first = array();
+		foreach ( $words as $i => $w ) {
+			$by_first[ $w[0][0] ][] = $i;
+		}
+		$solutions = array();
+		foreach ( $words as $a ) {
+			if ( $a[1] === $all ) {
+				$solutions[] = array( array( $a[0] ), strlen( $a[0] ), $a[2] );
+				continue;
+			}
+			foreach ( $by_first[ substr( $a[0], -1 ) ] ?? array() as $j ) {
+				$b = $words[ $j ];
+				if ( ( $a[1] | $b[1] ) === $all ) {
+					$solutions[] = array( array( $a[0], $b[0] ), strlen( $a[0] ) + strlen( $b[0] ), max( $a[2], $b[2] ) );
+				}
+			}
+		}
+		// Fewest words, then the most common words, then the shortest.
+		usort( $solutions, static fn( $x, $y ) => array( count( $x[0] ), $x[2], $x[1] ) <=> array( count( $y[0] ), $y[2], $y[1] ) );
+		usort( $words, static fn( $x, $y ) => array( self::bits( $y[1] ), $x[2] ) <=> array( self::bits( $x[1] ), $y[2] ) );
+		return array(
+			'count'     => count( $words ),
+			'words'     => array_map( static fn( $w ) => array( $w[0], self::bits( $w[1] ) ), array_slice( $words, 0, 500 ) ),
+			'solutions' => array_map( static fn( $s ) => $s[0], array_slice( $solutions, 0, 30 ) ),
+		);
+	}
+
+	private static function bits( int $mask ): int {
+		$n = 0;
+		for ( ; $mask; $mask &= $mask - 1 ) {
+			++$n;
+		}
+		return $n;
 	}
 
 	/** Exact anagrams: same letters, same counts. */

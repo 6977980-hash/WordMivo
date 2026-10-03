@@ -49,6 +49,10 @@ HTML,
 <p>The number next to each word is its base Scrabble score using standard English tile values, before any board bonuses. In the Scrabble word finder, blank tiles score zero, as in the game.</p>
 <h2>Wordle solver logic</h2>
 <p>The Wordle solver checks every five-letter word against each guess and colour you enter, using the same rules as the game, including repeated letters. If you guess a letter twice and only one copy is coloured, the solver knows the answer has that letter exactly once.</p>
+<h2>Word meanings</h2>
+<p>Definitions on our word pages come from <a href="https://wordnet.princeton.edu/" rel="nofollow">WordNet 3.0</a>, a lexical database of English created at Princeton University (WordNet 3.0 Copyright 2006 by Princeton University; used under its licence). We show up to three senses per part of speech, with an example where WordNet has one.</p>
+<h2>Puzzle solvers and game analysis</h2>
+<p>The Spelling Bee, Letter Boxed, Quordle and Wordle game analysis tools use the same ENABLE dictionary and frequency data. The analyzer rates each guess by how many possible answers it would leave on average compared with the best guess we can find, and rates luck by comparing the colours you got with the other possible answers.</p>
 <h2>What we do not use</h2>
 <p>We do not copy any game's official word or answer lists, and our tools are independent helpers, not copies of any game. Wordle, Scrabble and other game names are used only to describe what our tools help with.</p>
 <h2>Corrections</h2>
@@ -114,7 +118,7 @@ HTML,
 	);
 }
 
-const PAGES_VERSION = '3';
+const PAGES_VERSION = '4';
 
 /**
  * Create missing pages, and refresh pages we created earlier as long as nobody has

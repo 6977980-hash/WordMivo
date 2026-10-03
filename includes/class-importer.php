@@ -2,7 +2,7 @@
 /**
  * Resumable, batched import of the word list and frequency list.
  *
- * Stages: words -> ranks -> json -> counts -> done. Each call to step()
+ * Stages: words -> valid -> ranks -> likely -> defs -> json -> counts -> done. Each call to step()
  * does a bounded amount of work so it fits inside shared-hosting timeouts.
  *
  * @package WordMivo
@@ -17,6 +17,7 @@ class Importer {
 	const WORDS_FILE = 'words_alpha.txt';
 	const FREQ_FILE  = 'count_1w.txt';
 	const DICT_FILE  = 'enable1.txt';
+	const DEFS_FILE  = 'definitions.tsv';
 	const LIKELY_MAX_RANK = 40000;
 	const STATE      = 'wordmivo_import_state';
 
@@ -26,6 +27,10 @@ class Importer {
 
 	public static function dict_path(): string {
 		return trailingslashit( WORDMIVO_DATA_DIR ) . self::DICT_FILE;
+	}
+
+	public static function defs_path(): string {
+		return trailingslashit( WORDMIVO_DATA_DIR ) . self::DEFS_FILE;
 	}
 
 	public static function freq_path(): string {
@@ -126,7 +131,11 @@ class Importer {
 				break;
 			case 'likely':
 				$state['likely'] = self::mark_likely();
-				$state['stage']  = 'json';
+				$state['stage']  = 'defs';
+				$state['offset'] = 0;
+				break;
+			case 'defs':
+				$state = self::step_defs( $state, $batch );
 				break;
 			case 'json':
 				self::write_json();
@@ -256,6 +265,42 @@ class Importer {
 	}
 
 	/**
+	 * definitions.tsv (built from WordNet 3.0): "word<TAB>n:def~example|def<TAB>v:..."
+	 * or "word<TAB>=base" for inflected forms.
+	 */
+	private static function step_defs( array $state, int $batch ): array {
+		global $wpdb;
+		if ( ! is_readable( self::defs_path() ) ) {
+			$state['stage'] = 'json';
+			return $state;
+		}
+		$fh = fopen( self::defs_path(), 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		fseek( $fh, (int) $state['offset'] );
+		$rows = array();
+		$read = 0;
+		while ( $read < $batch && false !== ( $line = fgets( $fh ) ) ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition
+			++$read;
+			$parts = explode( "\t", rtrim( $line, "\r\n" ), 2 );
+			if ( 2 !== count( $parts ) || ! is_valid_word( $parts[0] ) ) {
+				continue;
+			}
+			$base   = str_starts_with( $parts[1], '=' ) ? substr( $parts[1], 1 ) : '';
+			$rows[] = $wpdb->prepare( '(%s,%s,%s)', $parts[0], is_valid_word( $base ) ? $base : '', $base ? '' : $parts[1] );
+		}
+		$state['offset'] = ftell( $fh );
+		$eof             = feof( $fh );
+		fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		if ( $rows ) {
+			$wpdb->query( 'REPLACE INTO ' . defs_table() . ' (word,base,defs) VALUES ' . implode( ',', $rows ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		if ( $eof || 0 === $read ) {
+			$state['stage']  = 'json';
+			$state['offset'] = 0;
+		}
+		return $state;
+	}
+
+	/**
 	 * Frequency file lines are "word<TAB>count" (or just "word"); rank = line number.
 	 */
 	private static function step_ranks( array $state, int $batch ): array {
@@ -338,6 +383,7 @@ class Importer {
 			array( 'dwyl/english-words (words_alpha.txt)', 'https://github.com/dwyl/english-words', 'Unlicense', self::words_path() ),
 			array( 'ENABLE word list (enable1.txt)', 'https://github.com/dolph/dictionary', 'Public domain (ENABLE2K by its authors)', self::dict_path() ),
 			array( 'Peter Norvig word frequencies (count_1w.txt)', 'https://github.com/norvig/pytudes', 'MIT (norvig/pytudes)', self::freq_path() ),
+			array( 'WordNet 3.0 definitions (definitions.tsv)', 'https://wordnet.princeton.edu/', 'WordNet 3.0 licence (Princeton University), see data/WORDNET-LICENSE.txt', self::defs_path() ),
 		);
 		foreach ( $sources as $s ) {
 			$wpdb->insert(

@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 		wordmivo_footer_links();
 		wordmivo_footer_pages();
 		?>
-		<p>&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> WordMivo. Wordle is a trademark of The New York Times Company. Scrabble is a trademark of Hasbro, Inc. and Mattel. WordMivo is an independent word helper and is not affiliated with them.</p>
+		<p>&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> WordMivo. Wordle, Spelling Bee and Letter Boxed are trademarks of The New York Times Company. Quordle is owned by Merriam-Webster. Scrabble is a trademark of Hasbro, Inc. and Mattel. WordMivo is an independent word helper and is not affiliated with them.</p>
 	</div>
 </footer>
 <?php if ( get_option( 'wordmivo_ga4_id' ) ) : ?>

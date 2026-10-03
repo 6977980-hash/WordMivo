@@ -62,8 +62,9 @@ get_header();
 	<section class="wm-section" aria-labelledby="wm-common">
 		<h2 id="wm-common"><?php echo esc_html( $words['likely'] ? ( $is_hub ? 'Likely Wordle answers' : 'Likely Wordle answers on this list' ) : ( $is_hub ? "Most common {$len} letter words" : 'Most common words' ) ); ?></h2>
 		<ul class="wm-words wm-words-common">
+			<?php $linkable = Words::linkable( wp_list_pluck( $words['common'], 'word' ) ); ?>
 			<?php foreach ( $words['common'] as $w ) : ?>
-				<li><?php echo esc_html( $w->word ); ?><sub><?php echo esc_html( $w->score ); ?></sub></li>
+				<li><?php echo isset( $linkable[ $w->word ] ) ? '<a href="' . esc_url( Words::url( $w->word ) ) . '">' . esc_html( $w->word ) . '</a>' : esc_html( $w->word ); ?><sub><?php echo esc_html( $w->score ); ?></sub></li>
 			<?php endforeach; ?>
 		</ul>
 	</section>

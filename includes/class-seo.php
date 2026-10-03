@@ -152,10 +152,11 @@ class Seo {
 				'item' => $home,
 			),
 		);
-		if ( 'tool' !== $spec['type'] && 'hub' !== $spec['type'] ) {
-			$hub      = Pages::normalize( array( 'type' => 'hub', 'len' => $spec['len'] ) );
+		$hub_len = 'word' === $spec['type'] ? strlen( $spec['x'] ) : (int) $spec['len'];
+		$hub     = Pages::normalize( array( 'type' => 'hub', 'len' => $hub_len ) );
+		if ( 'tool' !== $spec['type'] && 'hub' !== $spec['type'] && ( 'word' !== $spec['type'] || Pages::is_served( $hub ) ) ) {
 			$crumbs[] = array(
-				'name' => "{$spec['len']} Letter Words",
+				'name' => "{$hub_len} Letter Words",
 				'item' => Pages::url( $hub ),
 			);
 		}
@@ -196,6 +197,22 @@ class Seo {
 					'priceCurrency' => 'USD',
 				),
 			);
+		} elseif ( 'word' === $spec['type'] ) {
+			$w   = Words::get( $spec['x'] );
+			$def = Words::first_definition( $w );
+			if ( $def ) {
+				$graph[] = array(
+					'@type'            => 'DefinedTerm',
+					'name'             => $w->word,
+					'description'      => $def,
+					'url'              => $url,
+					'inDefinedTermSet' => array(
+						'@type' => 'DefinedTermSet',
+						'name'  => 'WordNet 3.0',
+						'url'   => 'https://wordnet.princeton.edu/',
+					),
+				);
+			}
 		} else {
 			$words   = Pages::words( $spec );
 			$list    = $words['common'] ? $words['common'] : $words['all'];
