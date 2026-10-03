@@ -537,7 +537,7 @@ class Pages {
 			'spelling-bee-solver'  => 'Enter the seven Spelling Bee letters to see every word, pangrams first, with points for each word.',
 			'letter-boxed-solver'  => 'Enter the 12 Letter Boxed letters side by side to find every playable word and two-word solutions.',
 			'word-of-the-day'      => self::wotd_description(),
-			'wordle-word-list-download' => 'Download free Wordle word lists: all 8,636 five-letter words, 2,141 likely answers and every starting word ranked, as CSV. Free under CC BY 4.0.',
+			'wordle-word-list-download' => 'Download free Wordle word lists: all 8,602 five-letter words, 2,130 likely answers and every starting word ranked, as CSV. Free under CC BY 4.0.',
 			'word-finder-widget'   => 'Add a free word finder or Wordle solver to your website or blog: copy one line of code. Fast, ad-free widget that works on phones.',
 			'crossword-solver'     => 'Free crossword clue solver and reverse dictionary: type a clue or a meaning plus the length or known letters (c???e) to find the answer word.',
 			'best-wordle-starting-words' => 'The best Wordle starting words ranked by data: how many answers each opener leaves on average, its worst case, and where CRANE, SLATE and ADIEU rank.',

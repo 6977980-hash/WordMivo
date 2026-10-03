@@ -231,7 +231,7 @@ class Shortcodes {
 			'@context'            => 'https://schema.org',
 			'@type'               => 'Dataset',
 			'name'                => 'WordMivo Wordle and Five-Letter Word Dataset',
-			'description'         => 'Five-letter English words with Scrabble scores and frequency ranks, an estimated list of 2,141 likely Wordle answers, and every five-letter word ranked as a Wordle starting word.',
+			'description'         => 'Five-letter English words with Scrabble scores and frequency ranks, an estimated list of 2,130 likely Wordle answers, and every five-letter word ranked as a Wordle starting word.',
 			'url'                 => Pages::url( array( 'type' => 'tool', 'x' => 'wordle-word-list-download' ) ),
 			'license'             => 'https://creativecommons.org/licenses/by/4.0/',
 			'isAccessibleForFree' => true,

@@ -177,3 +177,26 @@ function fit_description( array $sentences, int $max = 158 ): string {
 	}
 	return $out;
 }
+
+/**
+ * Offensive words (data/blocklist.txt, shipped with the plugin) that the site never shows.
+ * Returned as a lookup: [ word => true ].
+ */
+function blocked_words(): array {
+	static $blocked = null;
+	if ( null === $blocked ) {
+		$blocked = array();
+		$file    = WORDMIVO_DIR . 'data/blocklist.txt';
+		foreach ( is_readable( $file ) ? file( $file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) : array() as $line ) {
+			$line = strtolower( trim( $line ) );
+			if ( '' !== $line && '#' !== $line[0] ) {
+				$blocked[ $line ] = true;
+			}
+		}
+	}
+	return $blocked;
+}
+
+function is_blocked( string $word ): bool {
+	return isset( blocked_words()[ $word ] );
+}

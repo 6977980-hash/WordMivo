@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+- Family-friendly: data/blocklist.txt (profanity, sexual slang, slurs) is skipped at import and, after this deploy, removed from the word and definition tables in the background (DATA_REV 2), then likely answers, finder files and counts are rebuilt. Affects lists, finders, solvers, word pages and the sitemap.
+- Dataset regenerated: 8,602 five-letter words, 2,130 likely answers, starting words re-ranked (RAISE still #1). Methodology page explains the filter (PAGES_VERSION 6).
+
 ## 0.6.0
 - Word quality: lists, page counts, the finder, Wordle/Quordle solvers, anagram solver, unscrambler and Scrabble finder now use ENABLE dictionary words only (no names or junk such as "david", "aaron", "topsl"). Finder files and counts rebuild once in the background after deploy (no import needed); LiteSpeed cache is purged after rebuilds and imports.
 - Removed Today's Wordle Hints (needed a daily manual answer); /todays-wordle-hints/ redirects to /wordle-solver/. Admin field removed.

@@ -4,9 +4,9 @@ Free, ready-to-use data about five-letter English words, from [WordMivo](https:/
 
 | File | Rows | What it is |
 |---|---|---|
-| `five-letter-words.csv` | 8,636 | Every five-letter word in the ENABLE word list, with Scrabble score, English frequency rank and whether it is a likely Wordle answer |
-| `likely-wordle-answers.txt` | 2,141 | Our estimate of likely Wordle answers, one per line, A to Z |
-| `wordle-starting-words-ranked.csv` | 8,636 | Every five-letter word ranked as a Wordle opening guess |
+| `five-letter-words.csv` | 8,602 | Every five-letter word in the ENABLE word list (offensive words removed), with Scrabble score, English frequency rank and whether it is a likely Wordle answer |
+| `likely-wordle-answers.txt` | 2,130 | Our estimate of likely Wordle answers, one per line, A to Z |
+| `wordle-starting-words-ranked.csv` | 8,602 | Every five-letter word ranked as a Wordle opening guess |
 
 ## Columns
 
@@ -26,10 +26,10 @@ Free, ready-to-use data about five-letter English words, from [WordMivo](https:/
 
 ## How it was made
 
-- Words: the ENABLE word list (public domain).
+- Words: the ENABLE word list (public domain), with profanity, sexual slang and slurs removed.
 - Frequency: Peter Norvig's `count_1w.txt` from [norvig/pytudes](https://github.com/norvig/pytudes) (MIT License, Copyright (c) 2010-2017 Peter Norvig).
 - Likely answers: our own estimate, not the official answer list. A word is included when it is in ENABLE, is among the 40,000 most frequent English words, and is not a simple plural or past tense.
-- Openers: each word was played as a first guess against all 2,141 likely answers using Wordle's colour rules (repeated letters handled as in the game).
+- Openers: each word was played as a first guess against all 2,130 likely answers using Wordle's colour rules (repeated letters handled as in the game).
 
 Wordle is a trademark of The New York Times Company. This dataset is independent and not affiliated with it.
 

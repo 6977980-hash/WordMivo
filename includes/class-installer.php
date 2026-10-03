@@ -14,7 +14,7 @@ class Installer {
 	const DB_VERSION = '4';
 
 	/** Bump to rebuild the finder files and page counts in the background after a deploy. */
-	const DATA_REV = '1';
+	const DATA_REV = '2';
 
 	const REFRESH_HOOK = 'wordmivo_refresh_lists';
 
@@ -58,7 +58,7 @@ class Installer {
 			}
 			update_option( 'wordmivo_words_set_added', 1 );
 		}
-		// 0.6.0: lists and finders use dictionary words only; rebuild once, no import needed.
+		// 0.6.0: dictionary words only; 0.6.1: offensive words removed. Rebuild once, no import needed.
 		if ( self::DATA_REV !== (string) get_option( 'wordmivo_data_rev' ) && get_option( 'wordmivo_json_files' ) && ! wp_next_scheduled( self::REFRESH_HOOK ) ) {
 			wp_schedule_single_event( time() + 30, self::REFRESH_HOOK );
 		}
@@ -94,8 +94,10 @@ class Installer {
 		update_option( 'wordmivo_samples_removed', 1 );
 	}
 
-	/** Rebuild finder JSON and page counts from the current tables, then purge the page cache. */
+	/** Remove blocked words, re-mark likely answers, rebuild finder JSON and page counts, purge the page cache. */
 	public static function refresh_lists(): void {
+		Importer::remove_blocked();
+		Importer::mark_likely();
 		Importer::write_json();
 		Pages::rebuild_counts();
 		update_option( 'wordmivo_data_rev', self::DATA_REV );

@@ -49,8 +49,8 @@ HTML,
 <p><em>Maintained by <a href="{$profile}" rel="author noopener">{$owner}</a>.</em></p>
 <p>This page explains where WordMivo's words come from and how we sort them, so you know what you are looking at.</p>
 <h2>Word source</h2>
-<p>Our word list is based on the open-source <a href="https://github.com/dwyl/english-words" rel="nofollow">dwyl/english-words</a> list (released under the Unlicense). It contains about 370,000 English words. We add the public-domain <a href="https://github.com/dolph/dictionary" rel="nofollow">ENABLE</a> word list, the dictionary behind many Scrabble-style games, and keep only words made of the letters a to z. That gives about 380,000 words. Words found in ENABLE are treated as dictionary words and shown before others.</p>
-<p>Because this list is very broad, it includes some rare, old or specialised words. That is useful for word games, but it also means not every word is accepted by every game. Wordle, Scrabble and other games each use their own dictionaries.</p>
+<p>Our word list is based on the open-source <a href="https://github.com/dwyl/english-words" rel="nofollow">dwyl/english-words</a> list (released under the Unlicense). It contains about 370,000 English words. We add the public-domain <a href="https://github.com/dolph/dictionary" rel="nofollow">ENABLE</a> word list, the dictionary behind many Scrabble-style games, and keep only words made of the letters a to z. Only words found in ENABLE are shown on our lists and in our finders and solvers, so names and made-up strings from the raw list never appear.</p>
+<p>ENABLE is broad and includes some rare, old or specialised words. That is useful for word games, but not every word is accepted by every game: Wordle, Scrabble and other games each use their own dictionaries. We also leave out profanity, sexual slang and slurs, so the site is safe for classrooms and families.</p>
 <h2>How "common words" are chosen</h2>
 <p>We rank words using Peter Norvig's word frequency list (<a href="https://github.com/norvig/pytudes" rel="nofollow">count_1w.txt</a>, MIT licence), which counts how often words appear across a very large sample of English web text. A word is marked common if it is among the 20,000 most frequent words. On every list, common words are shown first; the full list follows in A to Z order.</p>
 <h2>Likely Wordle answers</h2>
@@ -128,7 +128,7 @@ HTML,
 	);
 }
 
-const PAGES_VERSION = '5';
+const PAGES_VERSION = '6';
 
 /**
  * Create missing pages, and refresh pages we created earlier as long as nobody has

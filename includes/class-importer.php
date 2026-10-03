@@ -163,7 +163,7 @@ class Importer {
 		while ( $read < $batch && false !== ( $line = fgets( $fh ) ) ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition
 			++$read;
 			$word = strtolower( trim( $line ) );
-			if ( ! is_valid_word( $word ) ) {
+			if ( ! is_valid_word( $word ) || is_blocked( $word ) ) {
 				continue;
 			}
 			$rows[] = self::row_sql( $word, 0 );
@@ -221,7 +221,7 @@ class Importer {
 		while ( $read < $batch && false !== ( $line = fgets( $fh ) ) ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition
 			++$read;
 			$word = strtolower( trim( $line ) );
-			if ( is_valid_word( $word ) ) {
+			if ( is_valid_word( $word ) && ! is_blocked( $word ) ) {
 				$rows[] = self::row_sql( $word, 1 );
 			}
 		}
@@ -238,6 +238,18 @@ class Importer {
 			$state['offset'] = 0;
 		}
 		return $state;
+	}
+
+	/** Delete blocked words (data/blocklist.txt) from the word and definition tables. */
+	public static function remove_blocked(): int {
+		global $wpdb;
+		$removed = 0;
+		foreach ( array_chunk( array_keys( blocked_words() ), 200 ) as $chunk ) {
+			$in       = implode( ',', array_map( static fn( $w ) => $wpdb->prepare( '%s', $w ), $chunk ) );
+			$removed += (int) $wpdb->query( 'DELETE FROM ' . words_table() . " WHERE word IN ({$in})" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->query( 'DELETE FROM ' . defs_table() . " WHERE word IN ({$in})" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		return $removed;
 	}
 
 	/**
@@ -282,7 +294,7 @@ class Importer {
 		while ( $read < $batch && false !== ( $line = fgets( $fh ) ) ) { // phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition
 			++$read;
 			$parts = explode( "\t", rtrim( $line, "\r\n" ), 2 );
-			if ( 2 !== count( $parts ) || ! is_valid_word( $parts[0] ) ) {
+			if ( 2 !== count( $parts ) || ! is_valid_word( $parts[0] ) || is_blocked( $parts[0] ) ) {
 				continue;
 			}
 			$base   = str_starts_with( $parts[1], '=' ) ? substr( $parts[1], 1 ) : '';
