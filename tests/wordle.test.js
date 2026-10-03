@@ -46,6 +46,12 @@ assert.deepStrictEqual(decodeGuesses('crane02102.bad'), rows);
 
 // Best guess splits the answers; with 2 answers it returns them.
 assert.deepStrictEqual(bestGuesses(['crane', 'crate'], ['crane', 'crate'], 5), ['crane', 'crate']);
+// A word in the pool twice (likely answers + candidates) is suggested once.
+{
+	const answers = ['lotus', 'sloth', 'lousy', 'south', 'mouth', 'youth'];
+	const picks = bestGuesses(answers, answers.concat(answers), 5);
+	assert.strictEqual(new Set(picks).size, picks.length);
+}
 console.log('extra tests passed');
 
 // Game analyzer: solving in one is perfect skill; steps carry before/after counts.

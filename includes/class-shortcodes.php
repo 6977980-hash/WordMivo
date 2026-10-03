@@ -3,7 +3,7 @@
  * Tool shortcodes. Markup works without JS for labels; JS adds behaviour.
  *
  * [wordmivo_finder length="5"] [wordmivo_wordle] [wordmivo_anagram]
- * [wordmivo_unscramble] [wordmivo_scrabble] [wordmivo_wordle_hints]
+ * [wordmivo_unscramble] [wordmivo_scrabble]
  * [wordmivo_analyzer] [wordmivo_bee] [wordmivo_boxed] [wordmivo_multi]
  *
  * @package WordMivo
@@ -23,7 +23,6 @@ class Shortcodes {
 		add_shortcode( 'wordmivo_anagram', static fn() => self::rack_tool( 'anagram' ) );
 		add_shortcode( 'wordmivo_unscramble', static fn() => self::rack_tool( 'unscramble' ) );
 		add_shortcode( 'wordmivo_scrabble', static fn() => self::rack_tool( 'rack' ) );
-		add_shortcode( 'wordmivo_wordle_hints', array( __CLASS__, 'wordle_hints' ) );
 		add_shortcode( 'wordmivo_analyzer', array( __CLASS__, 'analyzer' ) );
 		add_shortcode( 'wordmivo_bee', array( __CLASS__, 'bee' ) );
 		add_shortcode( 'wordmivo_boxed', array( __CLASS__, 'boxed' ) );
@@ -350,30 +349,5 @@ class Shortcodes {
 			. '<p>Where the starting words people talk about most land among all ' . esc_html( number_format_i18n( $data['guesses'] ) ) . ' words.</p>'
 			. $table( $data['popular'], true );
 		return $out;
-	}
-
-	public static function wordle_hints(): string {
-		$answer = strtolower( (string) get_option( 'wordmivo_wordle_answer', '' ) );
-		$date   = (string) get_option( 'wordmivo_wordle_date', '' );
-		$today  = current_time( 'Y-m-d' );
-		if ( ! preg_match( '/^[a-z]{5}$/', $answer ) || $date !== $today ) {
-			return '<p class="wm-note">Today\'s hints are not posted yet. Use the <a href="' . esc_url( home_url( '/wordle-solver/' ) ) . '">Wordle solver</a> with your guesses meanwhile.</p>';
-		}
-		$vowels  = vowel_count( $answer );
-		$repeats = has_repeat( $answer );
-		ob_start();
-		?>
-<div class="wm-hints">
-	<p class="wm-date"><?php echo esc_html( wp_date( 'l, F j, Y', strtotime( $today ) ) ); ?></p>
-	<ol>
-		<li>It has <strong><?php echo esc_html( $vowels ); ?></strong> vowel<?php echo 1 === $vowels ? '' : 's'; ?>.</li>
-		<li><?php echo $repeats ? 'At least one letter <strong>repeats</strong>.' : 'No letter repeats.'; ?></li>
-		<li><details><summary>Show the first letter</summary><p><strong><?php echo esc_html( strtoupper( $answer[0] ) ); ?></strong></p></details></li>
-		<li><details><summary>Show the last letter</summary><p><strong><?php echo esc_html( strtoupper( substr( $answer, -1 ) ) ); ?></strong></p></details></li>
-	</ol>
-	<details class="wm-reveal"><summary>Reveal today's answer</summary><p class="wm-answer"><?php echo esc_html( strtoupper( $answer ) ); ?></p></details>
-</div>
-		<?php
-		return (string) ob_get_clean();
 	}
 }

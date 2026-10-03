@@ -97,11 +97,6 @@ class Admin {
 			update_option( 'wordmivo_ad_slot_' . $pos, preg_match( '/^\d{6,20}$/', $slot ) ? $slot : '' );
 		}
 
-		$answer = strtolower( sanitize_text_field( wp_unslash( $_POST['wordle_answer'] ?? '' ) ) );
-		if ( '' === $answer || preg_match( '/^[a-z]{5}$/', $answer ) ) {
-			update_option( 'wordmivo_wordle_answer', $answer );
-			update_option( 'wordmivo_wordle_date', $answer ? current_time( 'Y-m-d' ) : '' );
-		}
 		// phpcs:enable
 		flush_rewrite_rules();
 		wp_safe_redirect( add_query_arg( 'updated', 1, admin_url( 'tools.php?page=' . self::SLUG ) ) );
@@ -153,7 +148,6 @@ class Admin {
 				<p class="description">Turn sets on in batches so Google indexes them gradually.</p>
 			</td></tr>
 			<tr><th scope="row">Home page</th><td><label><input type="checkbox" name="home_finder" value="1" <?php checked( get_option( 'wordmivo_home_finder', 1 ) ); ?>> Show the 5-letter word finder as the home page</label></td></tr>
-			<tr><th scope="row"><label for="wm-wordle">Today's Wordle answer</label></th><td><input id="wm-wordle" name="wordle_answer" type="text" maxlength="5" value="<?php echo esc_attr( get_option( 'wordmivo_wordle_answer', '' ) ); ?>"> <span class="description">Saved for today's date (<?php echo esc_html( current_time( 'Y-m-d' ) ); ?>). Hints page shows it hidden behind a reveal.</span></td></tr>
 			<tr><th scope="row"><label for="wm-ga4">GA4 measurement ID</label></th><td><input id="wm-ga4" name="ga4" type="text" placeholder="G-XXXXXXX" value="<?php echo esc_attr( get_option( 'wordmivo_ga4_id', '' ) ); ?>"> <span class="description">Loads only after cookie consent.</span></td></tr>
 			<tr><th scope="row">Ads (AdSense)</th><td>
 				<label style="display:block"><input type="checkbox" name="ads_enabled" value="1" <?php checked( get_option( 'wordmivo_ads_enabled', 0 ) ); ?>> Show ads</label>

@@ -46,7 +46,6 @@ class Pages {
 		'anagram-solver'       => 'Anagram Solver',
 		'word-unscrambler'     => 'Word Unscrambler',
 		'scrabble-word-finder' => 'Scrabble Word Finder',
-		'todays-wordle-hints'  => "Today's Wordle Hints",
 		'wordle-analyzer'      => 'Wordle Game Analyzer',
 		'spelling-bee-solver'  => 'Spelling Bee Solver',
 		'letter-boxed-solver'  => 'Letter Boxed Solver',
@@ -58,6 +57,36 @@ class Pages {
 		'wordle-word-list-download' => 'Wordle Word List Download',
 	);
 
+	/** Questions people search for on each tool page: visible FAQ + FAQPage schema. */
+	const TOOL_FAQ = array(
+		'wordle-solver'        => array(
+			array( 'How does the Wordle solver work?', 'Type each guess and tap its tiles to match the colours Wordle showed you: green, yellow or gray. The solver keeps only the words that would give exactly those colours and ranks the best next guess by how many answers it rules out.' ),
+			array( 'How does it handle repeated letters?', 'The same way Wordle does. If you guess a word with two Es and only one turns yellow or green, the answer has exactly one E. Many simple word filters get this wrong.' ),
+			array( 'Does the solver know today\'s answer?', 'No. It only uses the colours you enter, so it works for any day, past games and practice games, and it never spoils the answer.' ),
+			array( 'What does the "Hard mode" box do?', 'Wordle\'s hard mode makes every guess use the green and yellow letters you have found. Tick "Hard mode" and the solver only suggests words that could still be the answer, so every suggestion is a legal hard-mode guess.' ),
+		),
+		'anagram-solver'       => array(
+			array( 'What is an anagram?', 'An anagram is a word made by rearranging all the letters of another word, using each letter once. LISTEN and SILENT are anagrams, and so are EARTH and HEART.' ),
+			array( 'What is the difference between the anagram solver and the word unscrambler?', 'The anagram solver only shows words that use every letter you type. The word unscrambler also shows shorter words that use some of the letters.' ),
+			array( 'Which dictionary does the anagram solver use?', 'It uses the ENABLE word list, a public-domain list of about 173,000 words that many word games are based on, and shows common words first.' ),
+		),
+		'word-unscrambler'     => array(
+			array( 'How do I unscramble letters?', 'Type your letters in any order and press the button. You get every dictionary word of three or more letters that can be made from them, grouped by length and sorted by score.' ),
+			array( 'Can I use each letter more than once?', 'No. Each letter you type can be used once, the same as tiles in Scrabble. Type a letter twice if you have it twice.' ),
+			array( 'Can I unscramble letters with a blank tile?', 'Yes. Use the Scrabble word finder and type ? for each blank tile, up to two.' ),
+		),
+		'scrabble-word-finder' => array(
+			array( 'How do I find the best Scrabble word from my rack?', 'Type your seven tiles, using ? for a blank. The finder lists every word you can make, sorted by its Scrabble points, so the best scoring words are at the top.' ),
+			array( 'Are the points the same as in the game?', 'Each word shows its base tile value. Premium squares on the board, such as double or triple word, are not included, and blank tiles score zero.' ),
+			array( 'Which dictionary is used?', 'The ENABLE word list. It is very close to the word lists used in Scrabble and Words With Friends, but tournament dictionaries add or drop a few words, so check a rare word if a game is close.' ),
+		),
+	);
+
+	/** Old addresses and where they now live (301). */
+	const RETIRED = array(
+		'todays-wordle-hints' => 'wordle-solver', // Needed a daily manual answer; removed in 0.6.0.
+	);
+
 	/** @var array|null Spec for the current request. */
 	private static $current = null;
 
@@ -65,6 +94,7 @@ class Pages {
 		add_action( 'init', array( __CLASS__, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'template_redirect' ), 1 );
+		add_action( 'template_redirect', array( __CLASS__, 'redirects' ), 2 );
 		add_filter( 'template_include', array( __CLASS__, 'template_include' ), 99 );
 	}
 
@@ -178,6 +208,29 @@ class Pages {
 		return self::$current;
 	}
 
+	/**
+	 * Permanent redirects for pages that should not exist on their own: retired tools,
+	 * author archives (one-author site, thin) and upper-case word URLs.
+	 */
+	public static function redirects(): void {
+		if ( is_author() ) {
+			wp_safe_redirect( home_url( '/about/' ), 301 );
+			exit;
+		}
+		if ( ! is_404() ) {
+			return;
+		}
+		$path = trim( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( isset( self::RETIRED[ $path ] ) ) {
+			wp_safe_redirect( home_url( '/' . self::RETIRED[ $path ] . '/' ), 301 );
+			exit;
+		}
+		if ( preg_match( '#^word/([A-Za-z]{2,15})$#', $path, $m ) && strtolower( $m[1] ) !== $m[1] ) {
+			wp_safe_redirect( Words::url( strtolower( $m[1] ) ), 301 );
+			exit;
+		}
+	}
+
 	public static function template_redirect(): void {
 		$type = get_query_var( 'wm_type' );
 
@@ -213,10 +266,6 @@ class Pages {
 		if ( 'tool' === $spec['type'] && 'word-of-the-day' === $spec['x'] ) {
 			// Changes at local midnight.
 			do_action( 'litespeed_control_set_ttl', max( 300, strtotime( 'tomorrow', current_time( 'timestamp' ) ) - current_time( 'timestamp' ) ) );
-		}
-		if ( 'tool' === $spec['type'] && 'todays-wordle-hints' === $spec['x'] ) {
-			// Daily content: keep LiteSpeed's page cache short.
-			do_action( 'litespeed_control_set_ttl', 900 );
 		}
 		global $wp_query;
 		$wp_query->is_404  = false;
@@ -276,7 +325,7 @@ class Pages {
 		global $wpdb;
 		$len   = (int) $spec['len'];
 		$x     = $spec['x'];
-		$where = $wpdb->prepare( 'len = %d', $len );
+		$where = $wpdb->prepare( 'len = %d', $len ) . ( self::has_dictionary() ? ' AND is_valid = 1' : '' );
 		switch ( $spec['type'] ) {
 			case 'starts':
 				$where .= strlen( $x ) === 1
@@ -366,16 +415,25 @@ class Pages {
 	}
 
 	/**
+	 * Whether the ENABLE dictionary flags are imported. Lists, counts and the finders then
+	 * use dictionary words only, so names and junk from the raw word list never show.
+	 */
+	public static function has_dictionary(): bool {
+		global $wpdb;
+		static $has = null;
+		if ( null === $has ) {
+			$has = (bool) $wpdb->get_var( 'SELECT 1 FROM ' . words_table() . ' WHERE is_valid = 1 LIMIT 1' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+		return $has;
+	}
+
+	/**
 	 * "Common" means likely Wordle answers for 5 letters, otherwise frequent dictionary words.
 	 * Falls back to frequency alone when the dictionary has not been imported.
 	 */
 	private static function common_sql( array $spec ): string {
 		global $wpdb;
-		static $has_valid = null;
-		if ( null === $has_valid ) {
-			$has_valid = (bool) $wpdb->get_var( 'SELECT 1 FROM ' . words_table() . ' WHERE is_valid = 1 LIMIT 1' ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		}
-		if ( ! $has_valid ) {
+		if ( ! self::has_dictionary() ) {
 			return $wpdb->prepare( 'freq_rank <= %d', self::COMMON_RANK );
 		}
 		return 5 === (int) $spec['len'] ? 'is_likely = 1' : $wpdb->prepare( 'is_valid = 1 AND freq_rank <= %d', self::COMMON_RANK );
@@ -437,7 +495,6 @@ class Pages {
 				'anagram-solver'       => 'Anagram Solver: Find Words from Letters',
 				'word-unscrambler'     => 'Word Unscrambler: Unscramble Letters into Words',
 				'scrabble-word-finder' => 'Scrabble Word Finder with Blank Tiles & Scores',
-				'todays-wordle-hints'  => "Today's Wordle Hints (Spoiler-Free)",
 				'wordle-analyzer'      => 'Wordle Analyzer: Skill & Luck Score for Your Game',
 				'spelling-bee-solver'  => 'Spelling Bee Solver: All Words & Pangrams',
 				'letter-boxed-solver'  => 'Letter Boxed Solver: Words & Two-Word Solutions',
@@ -476,7 +533,6 @@ class Pages {
 			'anagram-solver'       => 'Type any letters to find every word that uses exactly those letters. Fast anagram solver with Scrabble scores.',
 			'word-unscrambler'     => 'Unscramble letters into every word you can make, grouped by length and sorted by score.',
 			'scrabble-word-finder' => 'Find the best Scrabble words from your rack, including up to two blank tiles, with scores.',
-			'todays-wordle-hints'  => "Spoiler-free hints for today's Wordle, with the answer hidden until you choose to reveal it.",
 			'wordle-analyzer'      => 'Free Wordle game analysis: enter your guesses and the answer to get a skill and luck score for every guess, and the best guess you could have played.',
 			'spelling-bee-solver'  => 'Enter the seven Spelling Bee letters to see every word, pangrams first, with points for each word.',
 			'letter-boxed-solver'  => 'Enter the 12 Letter Boxed letters side by side to find every playable word and two-word solutions.',
@@ -500,7 +556,7 @@ class Pages {
 		$days = Words::word_of_the_day();
 		$word = reset( $days );
 		$w    = $word ? Words::get( $word ) : null;
-		return $w ? wp_html_excerpt( sprintf( "Today's word is %s: %s. Learn a new English word every day with its meaning, an example and its Scrabble score.", ucfirst( $word ), Words::first_definition( $w ) ), 158, '...' ) : 'Learn a new English word every day with its meaning, an example and its Scrabble score.';
+		return $w ? fit_description( array( sprintf( "Today's word is %s: %s.", ucfirst( $word ), Words::first_definition( $w ) ), 'Learn a new English word every day with its meaning, an example and its Scrabble score.' ) ) : 'Learn a new English word every day with its meaning, an example and its Scrabble score.';
 	}
 
 	/**
@@ -510,6 +566,9 @@ class Pages {
 	public static function faq( array $spec ): array {
 		if ( 'word' === $spec['type'] ) {
 			return Words::faq( Words::get( $spec['x'] ) );
+		}
+		if ( 'tool' === $spec['type'] ) {
+			return self::TOOL_FAQ[ $spec['x'] ] ?? array();
 		}
 		$n     = (int) $spec['len'];
 		$words = self::words( $spec );
@@ -525,7 +584,7 @@ class Pages {
 				$faq[] = array( 'What is a good 5 letter word to start Wordle?', 'Start with a common word that uses five different, frequent letters, such as CRANE, SLATE, TRACE or CRATE. They test the vowels A and E plus the most common consonants R, S, T, L and N.' );
 			}
 			$faq[] = array( "How do I find {$n} letter words with certain letters?", 'Type the letters you know into their boxes, add letters that must appear anywhere in "Must contain", and letters to skip in "Exclude". The list updates as you type, with common words first.' );
-			$faq[] = array( 'Are all these words valid in Wordle and Scrabble?', 'Not always. Our list is broad and includes rare words. Each game uses its own dictionary, so common words shown first are the safest picks.' );
+			$faq[] = array( 'Are all these words valid in Wordle and Scrabble?', 'Every word here is in the ENABLE dictionary, which most word games are based on. Each game has its own list, so a rare word may still be refused; the common words shown first are the safest picks.' );
 		} elseif ( 'tool' !== $spec['type'] ) {
 			$phrase = self::phrase( $spec );
 			$faq[]  = array( 'How many ' . $phrase . ' are there?', "There are {$total} {$phrase} in WordMivo's list, of which {$words['n_common']} are " . ( 5 === $n ? 'likely Wordle answers.' : 'common words.' ) );

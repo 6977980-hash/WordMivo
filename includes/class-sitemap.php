@@ -23,6 +23,8 @@ class Sitemap {
 				}
 			}
 		);
+		// One-author site: author archives redirect to /about/, so keep them out of the sitemap.
+		add_filter( 'wp_sitemaps_add_provider', static fn( $provider, $name ) => 'users' === $name ? false : $provider, 10, 2 );
 	}
 
 	public static function urls(): array {

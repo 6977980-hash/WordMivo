@@ -145,6 +145,7 @@ class Importer {
 				Pages::rebuild_counts();
 				self::record_sources();
 				$state['stage'] = 'done';
+				update_option( 'wordmivo_data_rev', Installer::DATA_REV );
 				do_action( 'wordmivo_import_done' );
 				break;
 		}
@@ -358,9 +359,10 @@ class Importer {
 		foreach ( glob( $dir . '/words-*.json' ) ?: array() as $old ) {
 			wp_delete_file( $old );
 		}
+		$dict  = Pages::has_dictionary() ? ' AND is_valid = 1' : '';
 		for ( $len = MIN_LEN; $len <= MAX_LEN; $len++ ) {
 			$rows = $wpdb->get_results(
-				$wpdb->prepare( "SELECT word, scrabble_score, freq_rank, is_valid + 2 * is_likely FROM {$table} WHERE len = %d ORDER BY is_likely DESC, is_valid DESC, freq_rank IS NULL, freq_rank, word", $len ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->prepare( "SELECT word, scrabble_score, freq_rank, is_valid + 2 * is_likely FROM {$table} WHERE len = %d{$dict} ORDER BY is_likely DESC, is_valid DESC, freq_rank IS NULL, freq_rank, word", $len ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				ARRAY_N
 			);
 			// [word, score, rank (0 = unranked), flags: 1 = dictionary word, 2 = likely answer].

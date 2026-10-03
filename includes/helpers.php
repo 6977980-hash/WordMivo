@@ -149,3 +149,31 @@ function json_url( int $length ): string {
 	$files = get_option( 'wordmivo_json_files', array() );
 	return isset( $files[ $length ] ) ? (string) $files[ $length ] : '';
 }
+
+/** Shorten text to at most $max characters at a word boundary, adding "..." when cut. */
+function short_text( string $text, int $max ): string {
+	if ( mb_strlen( $text ) <= $max ) {
+		return $text;
+	}
+	return rtrim( mb_substr( $text, 0, (int) mb_strrpos( mb_substr( $text, 0, $max - 2 ), ' ' ) ), ' ,;:' ) . '...';
+}
+
+/**
+ * Meta description from whole sentences: adds sentences while they fit in $max
+ * characters, so Google never shows one cut mid-word. The first one is shortened
+ * at a word boundary only if it alone is too long.
+ */
+function fit_description( array $sentences, int $max = 158 ): string {
+	$out = '';
+	foreach ( array_filter( array_map( 'trim', $sentences ) ) as $s ) {
+		$next = '' === $out ? $s : $out . ' ' . $s;
+		if ( mb_strlen( $next ) > $max ) {
+			if ( '' === $out ) {
+				$out = short_text( $s, $max );
+			}
+			continue;
+		}
+		$out = $next;
+	}
+	return $out;
+}

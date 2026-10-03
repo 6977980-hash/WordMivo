@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+- Word quality: lists, page counts, the finder, Wordle/Quordle solvers, anagram solver, unscrambler and Scrabble finder now use ENABLE dictionary words only (no names or junk such as "david", "aaron", "topsl"). Finder files and counts rebuild once in the background after deploy (no import needed); LiteSpeed cache is purged after rebuilds and imports.
+- Removed Today's Wordle Hints (needed a daily manual answer); /todays-wordle-hints/ redirects to /wordle-solver/. Admin field removed.
+- WordPress leftovers: sample "Hello world!" post and "Sample Page" are trashed once if unedited; author archives redirect to /about/ and the users sitemap is off.
+- Favicon: PNG icons (48, 192), apple-touch-icon and /favicon.ico now show the WordMivo icon instead of the WordPress logo; Organization logo is a square 512px PNG.
+- FAQ sections with FAQPage schema on the Wordle solver, anagram solver, word unscrambler and Scrabble word finder.
+- Meta descriptions for word pages and Word of the Day are built from whole sentences and stay under 160 characters.
+- Upper-case word URLs (/word/Crane/) redirect to lower case.
+- Finder: "Find words" scrolls the results into view on phones.
+- Fix: Wordle solver suggested the same best guess twice.
+
 ## 0.5.1
 - Dataset page links to the Kaggle copy of the dataset (also in the Dataset schema sameAs and the README).
 

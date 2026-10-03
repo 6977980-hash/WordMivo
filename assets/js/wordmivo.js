@@ -107,7 +107,9 @@
 		if (answers.length <= 2) { return answers.slice(0, n); }
 		var score = letterScore(answers);
 		var size = Math.max(40, Math.min(pool.length, Math.floor(300000 / answers.length)));
-		var trimmed = pool.slice().sort(function (a, b) { return score(b) - score(a); }).slice(0, size);
+		var seen = {};
+		var trimmed = pool.filter(function (w) { if (seen[w]) { return false; } seen[w] = 1; return true; })
+			.sort(function (a, b) { return score(b) - score(a); }).slice(0, size);
 		var isAnswer = {};
 		answers.forEach(function (a) { isAnswer[a] = 1; });
 		return trimmed.map(function (g) {
@@ -376,7 +378,7 @@
 				l: s.likely ? '1' : ''
 			});
 		}
-		function run() {
+		function run(reveal) {
 			var s = state();
 			share(s);
 			loadWords(form.dataset.src).then(function (words) {
@@ -386,6 +388,11 @@
 				out.textContent = '';
 				out.appendChild(el('p', 'wm-count', found.length + ' word' + (found.length === 1 ? '' : 's') + ' found'));
 				renderList(out, found, 300);
+				// On phones the results start below the form: bring them into view after "Find words".
+				if (reveal === true && out.getBoundingClientRect().top > window.innerHeight * 0.6) {
+					if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); }
+					out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
 			}).catch(function () {
 				message(out, 'The word list is not available yet. Please try again later.');
 			});
@@ -412,7 +419,7 @@
 		bindBoxes(boxes, later);
 		form.addEventListener('input', function (e) { if (!e.target.classList.contains('wm-box') || e.target.classList.contains('wm-notat')) { later(); } });
 		form.addEventListener('change', later);
-		form.addEventListener('submit', function (e) { e.preventDefault(); run(); });
+		form.addEventListener('submit', function (e) { e.preventDefault(); run(true); });
 		form.addEventListener('reset', function () { setTimeout(function () { out.textContent = ''; setParams({}); }, 0); });
 		form.addEventListener('focusin', function () { loadWords(form.dataset.src).catch(function () {}); }, { once: true });
 		copyLinkButton(form);

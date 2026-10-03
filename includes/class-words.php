@@ -151,14 +151,15 @@ class Words {
 	}
 
 	public static function description( object $w ): string {
-		$def  = self::first_definition( $w );
-		$text = $w->is_valid
-			? sprintf( '%s is a valid Scrabble word worth %d points.', ucfirst( $w->word ), $w->score )
-			: sprintf( '%s is not in the Scrabble dictionary we use.', ucfirst( $w->word ) );
-		if ( $def ) {
-			$text = sprintf( '%s means "%s". ', ucfirst( $w->word ), wp_html_excerpt( $def, 90, '...' ) ) . $text;
-		}
-		return $text . ' See anagrams and words you can make from its letters.';
+		$def = self::first_definition( $w );
+		$cap = ucfirst( $w->word );
+		return fit_description(
+			array(
+				$def ? sprintf( '%s means "%s".', $cap, short_text( $def, 80 ) ) : '',
+				$w->is_valid ? sprintf( '%s is a valid Scrabble word worth %d points.', $cap, $w->score ) : sprintf( '%s is not in the Scrabble dictionary we use.', $cap ),
+				'See its anagrams and the words you can make from its letters.',
+			)
+		);
 	}
 
 	/**

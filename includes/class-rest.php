@@ -365,7 +365,7 @@ class Rest {
 	public static function anagrams( string $letters ): array {
 		global $wpdb;
 		$table = words_table();
-		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT word, scrabble_score FROM {$table} WHERE signature = %s ORDER BY freq_rank IS NULL, freq_rank, word LIMIT %d", signature( $letters ), self::MAX_RESULTS ), ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT word, scrabble_score FROM {$table} WHERE signature = %s" . ( Pages::has_dictionary() ? ' AND is_valid = 1' : '' ) . " ORDER BY freq_rank IS NULL, freq_rank, word LIMIT %d", signature( $letters ), self::MAX_RESULTS ), ARRAY_N ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return array_map( static fn( $r ) => array( $r[0], (int) $r[1] ), $rows );
 	}
 
@@ -381,7 +381,7 @@ class Rest {
 		$outside = ~letter_mask( $letters ) & 0x3FFFFFF;
 		$rows    = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT word FROM {$table} WHERE len BETWEEN %d AND %d AND BIT_COUNT(letter_mask & %d) <= %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT word FROM {$table} WHERE len BETWEEN %d AND %d AND BIT_COUNT(letter_mask & %d) <= %d" . ( Pages::has_dictionary() ? ' AND is_valid = 1' : '' ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$min,
 				strlen( $rack ),
 				$outside,

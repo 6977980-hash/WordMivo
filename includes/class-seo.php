@@ -19,6 +19,7 @@ class Seo {
 		add_action( 'wp_head', array( __CLASS__, 'head' ), 2 );
 		add_filter( 'robots_txt', array( __CLASS__, 'robots_txt' ), 10, 2 );
 		add_action( 'wp_head', array( __CLASS__, 'icons' ), 3 );
+		add_action( 'do_faviconico', array( __CLASS__, 'favicon_ico' ) );
 		add_action( 'init', static fn() => add_rewrite_rule( '^llms\\.txt$', 'index.php?wm_llms=1', 'top' ) );
 		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_llms' ) ) );
 		add_action( 'template_redirect', array( __CLASS__, 'llms_txt' ), 0 );
@@ -293,7 +294,7 @@ class Seo {
 			'@id'     => $home . '#org',
 			'name'    => 'WordMivo',
 			'url'     => $home,
-			'logo'    => self::asset_url( 'og.png' ),
+			'logo'    => self::asset_url( 'logo.png' ),
 			'email'   => 'contact@wordmivo.com',
 			'founder' => self::person(),
 			'sameAs'  => array_values( self::social_links() ),
@@ -456,7 +457,21 @@ if(ok){window.addEventListener('load',function(){setTimeout(load,1500)})}else{do
 	}
 
 	public static function icons(): void {
+		if ( has_site_icon() ) {
+			return; // A Site Icon chosen in the Customizer wins.
+		}
+		printf( '<link rel="icon" href="%s" sizes="48x48" type="image/png">' . "\n", esc_url( self::asset_url( 'icon-48.png' ) ) );
+		printf( '<link rel="icon" href="%s" sizes="192x192" type="image/png">' . "\n", esc_url( self::asset_url( 'icon-192.png' ) ) );
 		printf( '<link rel="icon" href="%s" type="image/svg+xml">' . "\n", esc_url( self::asset_url( 'favicon.svg' ) ) );
+		printf( '<link rel="apple-touch-icon" href="%s">' . "\n", esc_url( self::asset_url( 'apple-touch-icon.png' ) ) );
+	}
+
+	/** /favicon.ico: WordPress would redirect to its own W logo; send ours instead. */
+	public static function favicon_ico(): void {
+		if ( ! has_site_icon() ) {
+			wp_safe_redirect( self::asset_url( 'icon-48.png' ), 301 );
+			exit;
+		}
 	}
 
 	/**

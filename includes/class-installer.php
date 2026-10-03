@@ -13,6 +13,11 @@ class Installer {
 
 	const DB_VERSION = '4';
 
+	/** Bump to rebuild the finder files and page counts in the background after a deploy. */
+	const DATA_REV = '1';
+
+	const REFRESH_HOOK = 'wordmivo_refresh_lists';
+
 	public static function activate(): void {
 		self::create_tables();
 		self::cleanup_first_deploy();
@@ -53,6 +58,15 @@ class Installer {
 			}
 			update_option( 'wordmivo_words_set_added', 1 );
 		}
+		// 0.6.0: lists and finders use dictionary words only; rebuild once, no import needed.
+		if ( self::DATA_REV !== (string) get_option( 'wordmivo_data_rev' ) && get_option( 'wordmivo_json_files' ) && ! wp_next_scheduled( self::REFRESH_HOOK ) ) {
+			wp_schedule_single_event( time() + 30, self::REFRESH_HOOK );
+		}
+		// WordPress's sample post and page are thin, duplicate-looking content: trash them once
+		// if they still hold the default text (they stay restorable from the Trash).
+		if ( ! get_option( 'wordmivo_samples_removed' ) ) {
+			add_action( 'init', array( __CLASS__, 'trash_wp_samples' ), 30 );
+		}
 		// A Git deploy updates files without re-running activation.
 		if ( get_option( 'wordmivo_rewrite_version' ) !== WORDMIVO_VERSION ) {
 			add_action(
@@ -64,6 +78,28 @@ class Installer {
 				99
 			);
 		}
+	}
+
+	public static function trash_wp_samples(): void {
+		$samples = array(
+			'hello-world' => array( 'post', 'Welcome to WordPress. This is your first post.' ),
+			'sample-page' => array( 'page', 'This is an example page.' ),
+		);
+		foreach ( $samples as $slug => $info ) {
+			$post = get_page_by_path( $slug, OBJECT, $info[0] );
+			if ( $post && 'publish' === $post->post_status && str_contains( $post->post_content, $info[1] ) ) {
+				wp_trash_post( $post->ID );
+			}
+		}
+		update_option( 'wordmivo_samples_removed', 1 );
+	}
+
+	/** Rebuild finder JSON and page counts from the current tables, then purge the page cache. */
+	public static function refresh_lists(): void {
+		Importer::write_json();
+		Pages::rebuild_counts();
+		update_option( 'wordmivo_data_rev', self::DATA_REV );
+		do_action( 'litespeed_purge_all' );
 	}
 
 	public static function create_tables(): void {

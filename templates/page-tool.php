@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool pages: Wordle solver, anagram, unscrambler, Scrabble finder, daily hints.
+ * Tool pages: Wordle solver, anagram, unscrambler, Scrabble finder and the puzzle solvers.
  *
  * @package WordMivo
  */
@@ -119,12 +119,6 @@ $content = array(
 		),
 		'more'  => 'Results use our own list of likely answers (common five-letter words that are not plurals or past tenses), not the official answer list, and the same colour rules as the Wordle solver. Vowel-heavy words like ADIEU and AUDIO find vowels but leave far more answers than words with common consonants like R, S, T and L. Wordle is a trademark of The New York Times Company.',
 	),
-	'todays-wordle-hints'  => array(
-		'tool'  => '[wordmivo_wordle_hints]',
-		'intro' => "Stuck on today's Wordle? Open the hints one at a time. The answer stays hidden until you choose to reveal it.",
-		'how'   => array( 'Read the vowel and repeat hints first.', 'Open the first or last letter only if you need it.', 'Reveal the answer as a last resort.' ),
-		'more'  => 'Wordle is a trademark of The New York Times Company. WordMivo is not affiliated with it.',
-	),
 );
 $c = $content[ $tool ];
 
@@ -146,6 +140,16 @@ get_header();
 		<p><?php echo esc_html( $c['more'] ); ?></p>
 	</section>
 	<?php echo Ads::slot( 'bottom' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
+	<?php $faq = Pages::faq( $spec ); ?>
+	<?php if ( $faq ) : ?>
+	<section class="wm-section wm-prose wm-faq" aria-labelledby="wm-faq">
+		<h2 id="wm-faq">Frequently asked questions</h2>
+		<?php foreach ( $faq as $qa ) : ?>
+			<h3><?php echo esc_html( $qa[0] ); ?></h3>
+			<p><?php echo esc_html( $qa[1] ); ?></p>
+		<?php endforeach; ?>
+	</section>
+	<?php endif; ?>
 	<?php foreach ( Pages::related( $spec ) as $label => $links ) : ?>
 	<nav class="wm-section wm-related" aria-label="<?php echo esc_attr( $label ); ?>">
 		<h2><?php echo esc_html( $label ); ?></h2>
