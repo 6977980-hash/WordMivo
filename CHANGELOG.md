@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.1
+- Bing Webmaster Tools verification meta (msvalidate.01), default code set, editable in Tools > WordMivo.
+
 ## 0.4.0
 - Crossword clue solver / reverse dictionary (/crossword-solver/): FULLTEXT search over WordNet meanings and synonyms, filtered by length or pattern (c???e); pattern-only search lists common words. DB_VERSION 4 (fulltext index).
 - definitions.tsv now carries WordNet synonyms ("s:" group); word pages show a Synonyms section. Needs one Start import.

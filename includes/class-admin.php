@@ -74,6 +74,11 @@ class Admin {
 			$gsc = $m[1];
 		}
 		update_option( 'wordmivo_gsc_verification', sanitize_text_field( $gsc ) );
+		$bing = wp_unslash( $_POST['bing'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
+		if ( preg_match( '/content=["\']([^"\']+)/', $bing, $m ) ) {
+			$bing = $m[1];
+		}
+		update_option( 'wordmivo_bing_verification', sanitize_text_field( $bing ) );
 
 		$social = array();
 		foreach ( array_keys( Seo::SOCIAL ) as $key ) {
@@ -165,6 +170,7 @@ class Admin {
 				<?php endforeach; ?>
 				<p class="description">Shown in the footer and added to Google's structured data (sameAs) so the site is recognised as a brand.</p>
 			</td></tr>
+			<tr><th scope="row"><label for="wm-bing">Bing verification code</label></th><td><input id="wm-bing" name="bing" type="text" class="regular-text" value="<?php echo esc_attr( get_option( 'wordmivo_bing_verification', BING_DEFAULT ) ); ?>"></td></tr>
 			<tr><th scope="row"><label for="wm-gsc">Search Console verification code</label></th><td><input id="wm-gsc" name="gsc" type="text" class="regular-text" value="<?php echo esc_attr( get_option( 'wordmivo_gsc_verification', GSC_DEFAULT ) ); ?>"></td></tr>
 		</table>
 		<?php submit_button(); ?>

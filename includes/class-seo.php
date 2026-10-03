@@ -151,6 +151,10 @@ class Seo {
 		if ( $gsc ) {
 			printf( '<meta name="google-site-verification" content="%s">' . "\n", esc_attr( $gsc ) );
 		}
+		$bing = get_option( 'wordmivo_bing_verification', BING_DEFAULT );
+		if ( $bing ) {
+			printf( '<meta name="msvalidate.01" content="%s">' . "\n", esc_attr( $bing ) );
+		}
 	}
 
 	private static function json_ld( array $spec, string $url, string $description ): void {

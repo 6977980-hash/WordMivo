@@ -22,6 +22,9 @@ const OWNER_LINKEDIN = 'https://www.linkedin.com/in/ali-ahmad-chaudhry-12777486/
 // Google Search Console verification for wordmivo.com (public by design; overridable in Tools > WordMivo).
 const GSC_DEFAULT = '9cmloaft-ebcSjQTtJyk9sf1CjuJXuAEsMCD1W_u4p4';
 
+// Bing Webmaster Tools verification (public by design; overridable in Tools > WordMivo).
+const BING_DEFAULT = '3CA5D5A38222486BA11B6778E763417C';
+
 /**
  * Standard English Scrabble tile values.
  */
