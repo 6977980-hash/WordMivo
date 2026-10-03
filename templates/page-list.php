@@ -98,6 +98,17 @@ get_header();
 	</section>
 	<?php endif; ?>
 
+	<?php $faq = Pages::faq( $spec ); ?>
+	<?php if ( $faq ) : ?>
+	<section class="wm-section wm-prose wm-faq" aria-labelledby="wm-faq">
+		<h2 id="wm-faq">Frequently asked questions</h2>
+		<?php foreach ( $faq as $qa ) : ?>
+			<h3><?php echo esc_html( $qa[0] ); ?></h3>
+			<p><?php echo esc_html( $qa[1] ); ?></p>
+		<?php endforeach; ?>
+	</section>
+	<?php endif; ?>
+
 	<?php foreach ( Pages::related( $spec ) as $label => $links ) : ?>
 	<nav class="wm-section wm-related" aria-label="<?php echo esc_attr( $label ); ?>">
 		<h2><?php echo esc_html( $label ); ?></h2>

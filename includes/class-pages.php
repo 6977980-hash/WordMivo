@@ -413,6 +413,36 @@ class Pages {
 	}
 
 	/**
+	 * Short question/answer pairs for the page: visible FAQ + FAQPage schema.
+	 * Answers lead with the fact so search and AI answers can quote them.
+	 */
+	public static function faq( array $spec ): array {
+		$n     = (int) $spec['len'];
+		$words = self::words( $spec );
+		$total = number_format_i18n( $words['total'] );
+		$ex    = implode( ', ', array_slice( wp_list_pluck( $words['common'], 'word' ), 0, 5 ) );
+		$faq   = array();
+		if ( 'hub' === $spec['type'] ) {
+			$faq[] = array( "How many {$n} letter words are there?", "WordMivo's list has {$total} {$n}-letter English words. {$words['n_common']} of them are common everyday words." );
+			if ( $ex ) {
+				$faq[] = array( "What are the most common {$n} letter words?", "The most common {$n}-letter words in English include {$ex}." );
+			}
+			if ( 5 === $n ) {
+				$faq[] = array( 'What is a good 5 letter word to start Wordle?', 'Start with a common word that uses five different, frequent letters, such as CRANE, SLATE, TRACE or CRATE. They test the vowels A and E plus the most common consonants R, S, T, L and N.' );
+			}
+			$faq[] = array( "How do I find {$n} letter words with certain letters?", 'Type the letters you know into their boxes, add letters that must appear anywhere in "Must contain", and letters to skip in "Exclude". The list updates as you type, with common words first.' );
+			$faq[] = array( 'Are all these words valid in Wordle and Scrabble?', 'Not always. Our list is broad and includes rare words. Each game uses its own dictionary, so common words shown first are the safest picks.' );
+		} elseif ( 'tool' !== $spec['type'] ) {
+			$phrase = self::phrase( $spec );
+			$faq[]  = array( 'How many ' . $phrase . ' are there?', "There are {$total} {$phrase} in WordMivo's list, of which {$words['n_common']} are common words." );
+			if ( $ex ) {
+				$faq[] = array( 'What are common ' . $phrase . '?', "Common {$phrase} include {$ex}." );
+			}
+		}
+		return $faq;
+	}
+
+	/**
 	 * Related pages for internal linking.
 	 */
 	public static function related( array $spec ): array {

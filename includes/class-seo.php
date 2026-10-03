@@ -16,6 +16,10 @@ class Seo {
 		add_filter( 'wp_robots', array( __CLASS__, 'robots' ) );
 		add_action( 'wp_head', array( __CLASS__, 'head' ), 2 );
 		add_filter( 'robots_txt', array( __CLASS__, 'robots_txt' ), 10, 2 );
+		add_action( 'wp_head', array( __CLASS__, 'icons' ), 3 );
+		add_action( 'init', static fn() => add_rewrite_rule( '^llms\\.txt$', 'index.php?wm_llms=1', 'top' ) );
+		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_llms' ) ) );
+		add_action( 'template_redirect', array( __CLASS__, 'llms_txt' ), 0 );
 		add_action( 'send_headers', array( __CLASS__, 'security_headers' ) );
 		add_action( 'wp_footer', array( __CLASS__, 'analytics' ), 99 );
 
@@ -81,10 +85,12 @@ class Seo {
 		if ( $spec ) {
 			$description = Pages::description( $spec );
 		} elseif ( is_singular() ) {
-			$description = wp_strip_all_tags( get_the_excerpt() );
+			$post        = get_post();
+			$source      = has_excerpt( $post ) ? $post->post_excerpt : strip_shortcodes( $post->post_content );
+			$description = wp_html_excerpt( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $source ) ) ), 155, '...' );
 		}
 		$canonical = self::canonical();
-		$image     = file_exists( get_theme_file_path( 'assets/og.png' ) ) ? get_theme_file_uri( 'assets/og.png' ) : '';
+		$image     = self::asset_url( 'og.png' );
 
 		if ( $canonical && $spec ) {
 			printf( '<link rel="canonical" href="%s">' . "\n", esc_url( $canonical ) );
@@ -102,6 +108,10 @@ class Seo {
 		);
 		foreach ( array_filter( $og ) as $property => $content ) {
 			printf( '<meta property="%s" content="%s">' . "\n", esc_attr( $property ), esc_attr( $content ) );
+		}
+		if ( $image ) {
+			echo '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' . "\n";
+			printf( '<meta property="og:image:alt" content="%s">' . "\n", esc_attr( 'WordMivo 5 letter word finder and Wordle solver' ) );
 		}
 		echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 		self::verification();
@@ -122,10 +132,18 @@ class Seo {
 		$graph   = array();
 		$home    = home_url( '/' );
 		$graph[] = array(
-			'@type' => 'WebSite',
-			'@id'   => $home . '#website',
+			'@type'     => 'WebSite',
+			'@id'       => $home . '#website',
+			'name'      => 'WordMivo',
+			'url'       => $home,
+			'publisher' => array( '@id' => $home . '#org' ),
+		);
+		$graph[] = array(
+			'@type' => 'Organization',
+			'@id'   => $home . '#org',
 			'name'  => 'WordMivo',
 			'url'   => $home,
+			'logo'  => self::asset_url( 'og.png' ),
 		);
 
 		$crumbs = array(
@@ -196,6 +214,23 @@ class Seo {
 				),
 			);
 		}
+		$faq = Pages::faq( $spec );
+		if ( $faq ) {
+			$graph[] = array(
+				'@type'      => 'FAQPage',
+				'mainEntity' => array_map(
+					static fn( $qa ) => array(
+						'@type'          => 'Question',
+						'name'           => $qa[0],
+						'acceptedAnswer' => array(
+							'@type' => 'Answer',
+							'text'  => $qa[1],
+						),
+					),
+					$faq
+				),
+			);
+		}
 		echo '<script type="application/ld+json">' . wp_json_encode(
 			array(
 				'@context' => 'https://schema.org',
@@ -241,5 +276,52 @@ var ok=false;try{ok=localStorage.getItem('wm_consent')==='yes'}catch(e){}
 if(ok){window.addEventListener('load',function(){setTimeout(load,1500)})}else{document.addEventListener('wm:consent',load,{once:true})}})();
 </script>
 		<?php
+	}
+
+	/** Theme assets via the plugin URL, which works whichever theme is active. */
+	private static function asset_url( string $file ): string {
+		return WORDMIVO_URL . 'themes/wordmivo-theme/assets/' . $file;
+	}
+
+	public static function icons(): void {
+		printf( '<link rel="icon" href="%s" type="image/svg+xml">' . "\n", esc_url( self::asset_url( 'favicon.svg' ) ) );
+	}
+
+	/**
+	 * /llms.txt: a plain summary of the site for AI assistants (llmstxt.org format).
+	 */
+	public static function llms_txt(): void {
+		if ( ! get_query_var( 'wm_llms' ) ) {
+			return;
+		}
+		$lines   = array( '# WordMivo', '', '> Free word finder tools for Wordle, Scrabble and word games: find words by length, letters, position and pattern, with common English words listed first and Scrabble scores shown.', '' );
+		$lines[] = '## Tools';
+		foreach ( Pages::TOOLS as $slug => $name ) {
+			$spec    = Pages::normalize( array( 'type' => 'tool', 'x' => $slug ) );
+			$lines[] = sprintf( '- [%s](%s): %s', $name, Pages::url( $spec ), Pages::tool_description( $slug ) );
+		}
+		$lines[] = '';
+		$lines[] = '## Word finders by length';
+		for ( $n = MIN_LEN; $n <= MAX_LEN; $n++ ) {
+			$spec    = Pages::normalize( array( 'type' => 'hub', 'len' => $n ) );
+			$lines[] = sprintf( '- [%d letter words](%s): finder and list of %s %d-letter words', $n, Pages::url( $spec ), number_format_i18n( Pages::count( $spec ) ), $n );
+		}
+		$lines[] = '';
+		$lines[] = '## Word lists';
+		$lines[] = sprintf( '- 5 letter words starting with a letter, e.g. [starting with A](%s)', Pages::url( array( 'type' => 'starts', 'len' => 5, 'x' => 'a' ) ) );
+		$lines[] = sprintf( '- 5 letter words ending in a letter, e.g. [ending in E](%s)', Pages::url( array( 'type' => 'ends', 'len' => 5, 'x' => 'e' ) ) );
+		$lines[] = sprintf( '- Full index: [sitemap](%s)', home_url( '/wp-sitemap.xml' ) );
+		$lines[] = '';
+		$lines[] = '## About';
+		foreach ( array( 'about', 'methodology' ) as $slug ) {
+			$page = get_page_by_path( $slug );
+			if ( $page && 'publish' === $page->post_status ) {
+				$lines[] = sprintf( '- [%s](%s)', get_the_title( $page ), get_permalink( $page ) );
+			}
+		}
+		status_header( 200 );
+		header( 'Content-Type: text/plain; charset=utf-8' );
+		echo implode( "\n", $lines ) . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- plain text.
+		exit;
 	}
 }

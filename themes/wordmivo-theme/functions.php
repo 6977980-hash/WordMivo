@@ -87,3 +87,32 @@ function wordmivo_footer_pages(): void {
 	}
 	echo '</ul>';
 }
+
+/**
+ * Site-wide internal links: word finders, tools and 5-letter A-Z lists.
+ */
+function wordmivo_footer_links(): void {
+	if ( ! class_exists( 'WordMivo\\Pages' ) ) {
+		return;
+	}
+	$groups = array();
+	for ( $n = 3; $n <= 8; $n++ ) {
+		$groups['Word finders'][ "{$n} letter words" ] = WordMivo\Pages::url( array( 'type' => 'hub', 'len' => $n ) );
+	}
+	foreach ( WordMivo\Pages::TOOLS as $slug => $name ) {
+		$groups['Tools'][ $name ] = WordMivo\Pages::url( array( 'type' => 'tool', 'x' => $slug ) );
+	}
+	foreach ( range( 'a', 'z' ) as $l ) {
+		$spec = WordMivo\Pages::normalize( array( 'type' => 'starts', 'len' => 5, 'x' => $l ) );
+		if ( WordMivo\Pages::is_served( $spec ) && WordMivo\Pages::count( $spec ) > 0 ) {
+			$groups['5 letter words starting with'][ strtoupper( $l ) ] = WordMivo\Pages::url( $spec );
+		}
+	}
+	foreach ( $groups as $label => $links ) {
+		printf( '<nav class="wm-footer-group" aria-label="%1$s"><p class="wm-footer-title">%1$s</p><ul>', esc_attr( $label ) );
+		foreach ( $links as $text => $url ) {
+			printf( '<li><a href="%s">%s</a></li>', esc_url( $url ), esc_html( $text ) );
+		}
+		echo '</ul></nav>';
+	}
+}

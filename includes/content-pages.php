@@ -63,7 +63,6 @@ HTML,
 		'privacy-policy'   => array(
 			'title'   => 'Privacy Policy',
 			'content' => <<<HTML
-<p>{$updated}</p>
 <p>This policy explains what information WordMivo ("we") collects when you use wordmivo.com, and how it is used. We keep data collection to a minimum.</p>
 <h2>No accounts</h2>
 <p>You can use every tool without signing up. We do not ask for your name, email or any other personal details unless you choose to email us.</p>
@@ -82,13 +81,13 @@ HTML,
 <h2>Your rights</h2>
 <p>Depending on where you live, you may have the right to ask what data we hold about you and to have it deleted. Email us at <a href="mailto:{$email}">{$email}</a>.</p>
 <h2>Changes</h2>
-<p>We will post any changes to this policy on this page and update the date above.</p>
+<p>We will post any changes to this policy on this page and update the date below.</p>
+<p>{$updated}</p>
 HTML,
 		),
 		'terms-of-service' => array(
 			'title'   => 'Terms of Service',
 			'content' => <<<HTML
-<p>{$updated}</p>
 <p>By using wordmivo.com you agree to these terms. If you do not agree, please do not use the site.</p>
 <h2>Use of the site</h2>
 <p>WordMivo is free for personal use. Please do not use automated tools to scrape the site or send large volumes of requests to our tools, and do not try to disrupt or harm the service.</p>
@@ -103,7 +102,8 @@ HTML,
 <h2>Liability</h2>
 <p>To the extent allowed by law, WordMivo is not liable for any loss or damage arising from your use of the site.</p>
 <h2>Changes</h2>
-<p>We may update these terms from time to time. The date above shows the latest version.</p>
+<p>We may update these terms from time to time. The date below shows the latest version.</p>
+<p>{$updated}</p>
 <p>Contact: <a href="mailto:{$email}">{$email}</a></p>
 HTML,
 		),

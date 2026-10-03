@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 		if ( has_nav_menu( 'footer' ) ) {
 			wp_nav_menu( array( 'theme_location' => 'footer', 'container' => false, 'depth' => 1 ) );
 		}
+		wordmivo_footer_links();
 		wordmivo_footer_pages();
 		?>
 		<p>&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> WordMivo. Wordle is a trademark of The New York Times Company; WordMivo is not affiliated with it.</p>

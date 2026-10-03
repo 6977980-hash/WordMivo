@@ -33,7 +33,9 @@ h2{font-size:1.3rem}
 .wm-prose ol,.wm-prose ul{padding-left:1.3em}
 .wm-footer{border-top:1px solid var(--line);background:var(--surface);padding:24px 0 32px;font-size:.9rem;color:var(--muted)}
 .wm-footer ul{list-style:none;padding:0;margin:0 0 12px;display:flex;flex-wrap:wrap;gap:4px 16px}
-.wm-footer a{color:var(--muted);display:inline-block;padding:6px 0}
+.wm-footer a{color:var(--muted);display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px}
+.wm-footer-title{font-weight:700;color:var(--text);margin:0 0 4px}
+.wm-faq h3{font-size:1.05rem;margin:1.2em 0 .3em}
 .wm-consent{position:fixed;left:16px;right:16px;bottom:16px;max-width:560px;margin:0 auto;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:20}
 .wm-consent p{margin:0;flex:1 1 220px;font-size:.9rem}
 .wm-entry{border-bottom:1px solid var(--line);padding:16px 0}
