@@ -31,6 +31,7 @@ class Ads {
 		add_filter( 'query_vars', static fn( $v ) => array_merge( $v, array( 'wm_ads_txt' ) ) );
 		add_action( 'template_redirect', array( __CLASS__, 'ads_txt' ), 0 );
 		add_filter( 'the_content', array( __CLASS__, 'after_content' ), 20 );
+		add_filter( 'the_content', array( __CLASS__, 'privacy_disclosure' ), 15 );
 	}
 
 	public static function client(): string {
@@ -57,6 +58,19 @@ class Ads {
 			esc_attr( self::client() ),
 			esc_attr( $slot )
 		);
+	}
+
+	/**
+	 * While ads are on, the privacy policy page gets the disclosure AdSense requires.
+	 */
+	public static function privacy_disclosure( $content ) {
+		if ( ! self::enabled() || ! is_page() || (int) get_option( 'wp_page_for_privacy_policy' ) !== get_the_ID() ) {
+			return $content;
+		}
+		return $content . '<h2>Advertising (Google AdSense)</h2>'
+			. '<p>WordMivo shows ads from Google AdSense. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this and other websites. Google\'s use of advertising cookies enables it and its partners to serve ads to you based on your visits to our site and/or other sites on the Internet.</p>'
+			. '<p>You may opt out of personalised advertising by visiting <a href="https://adssettings.google.com" rel="nofollow">Google Ads Settings</a>, or opt out of some third-party vendors\' use of cookies at <a href="https://www.aboutads.info/choices/" rel="nofollow">aboutads.info</a>. Learn more in <a href="https://policies.google.com/technologies/ads" rel="nofollow">how Google uses information from sites that use its services</a>.</p>'
+			. '<p>Visitors in the European Economic Area, the UK and Switzerland are asked for consent before personalised ads are shown.</p>';
 	}
 
 	/** One slot after normal page/post content (not on our virtual pages). */

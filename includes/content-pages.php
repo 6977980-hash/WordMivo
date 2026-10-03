@@ -42,13 +42,15 @@ HTML,
 <p>Our word list is based on the open-source <a href="https://github.com/dwyl/english-words" rel="nofollow">dwyl/english-words</a> list (released under the Unlicense). It contains about 370,000 English words. We add the public-domain <a href="https://github.com/dolph/dictionary" rel="nofollow">ENABLE</a> word list, the dictionary behind many Scrabble-style games, and keep only words made of the letters a to z. That gives about 380,000 words. Words found in ENABLE are treated as dictionary words and shown before others.</p>
 <p>Because this list is very broad, it includes some rare, old or specialised words. That is useful for word games, but it also means not every word is accepted by every game. Wordle, Scrabble and other games each use their own dictionaries.</p>
 <h2>How "common words" are chosen</h2>
-<p>We rank words using Peter Norvig's word frequency list (<a href="https://norvig.com/ngrams/" rel="nofollow">count_1w.txt</a>), which counts how often words appear across a very large sample of English web text. A word is marked common if it is among the 20,000 most frequent words. On every list, common words are shown first; the full list follows in A to Z order.</p>
+<p>We rank words using Peter Norvig's word frequency list (<a href="https://github.com/norvig/pytudes" rel="nofollow">count_1w.txt</a>, MIT licence), which counts how often words appear across a very large sample of English web text. A word is marked common if it is among the 20,000 most frequent words. On every list, common words are shown first; the full list follows in A to Z order.</p>
 <h2>Likely Wordle answers</h2>
 <p>Wordle answers are everyday words, and the game rarely uses plurals or past tenses as answers. So we mark a five-letter word as a likely answer when it is in the ENABLE dictionary, is among the 40,000 most frequent English words, and is not a simple plural (like "cats") or past tense (like "baked"). This gives about 2,100 words. It is our own estimate, not the official Wordle list, so treat it as a strong hint rather than a guarantee.</p>
 <h2>Scrabble scores</h2>
 <p>The number next to each word is its base Scrabble score using standard English tile values, before any board bonuses. In the Scrabble word finder, blank tiles score zero, as in the game.</p>
 <h2>Wordle solver logic</h2>
 <p>The Wordle solver checks every five-letter word against each guess and colour you enter, using the same rules as the game, including repeated letters. If you guess a letter twice and only one copy is coloured, the solver knows the answer has that letter exactly once.</p>
+<h2>What we do not use</h2>
+<p>We do not copy any game's official word or answer lists, and our tools are independent helpers, not copies of any game. Wordle, Scrabble and other game names are used only to describe what our tools help with.</p>
 <h2>Corrections</h2>
 <p>If you spot a word that should not be on a list, or one that is missing, please <a href="/contact/">tell us</a>.</p>
 <p>{$updated}</p>
@@ -112,7 +114,7 @@ HTML,
 	);
 }
 
-const PAGES_VERSION = '2';
+const PAGES_VERSION = '3';
 
 /**
  * Create missing pages, and refresh pages we created earlier as long as nobody has
