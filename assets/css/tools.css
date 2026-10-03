@@ -1,0 +1,26 @@
+.wm-tool{--wm-g:#16a34a;--wm-y:#ca8a04;--wm-x:#6b7280;background:var(--surface,#f8fafc);border:1px solid var(--line,#e2e8f0);border-radius:12px;padding:16px;margin:16px 0 24px}
+.wm-tool fieldset{border:0;margin:0;padding:0}
+.wm-tool legend,.wm-tool label{font-weight:600;font-size:.9rem;padding:0}
+.wm-tool label{display:flex;flex-direction:column;gap:4px;flex:1 1 140px}
+.wm-tool input[type=text],.wm-tool select{font:inherit;font-size:1rem;padding:10px 12px;border:1px solid var(--line,#cbd5e1);border-radius:8px;background:var(--bg,#fff);color:inherit;min-height:44px;width:100%;box-sizing:border-box}
+.wm-boxes,.wm-guess{display:flex;gap:6px;margin:8px 0 12px;flex-wrap:nowrap}
+.wm-tool .wm-box,.wm-tool .wm-tile{width:48px;height:48px;padding:0;text-align:center;text-transform:uppercase;font-weight:700;font-size:1.3rem;flex:0 1 48px;min-width:0}
+.wm-tile{cursor:pointer;color:#fff!important;border:0!important}
+.wm-tile[data-state=gray]{background:var(--wm-x)!important}
+.wm-tile[data-state=yellow]{background:var(--wm-y)!important}
+.wm-tile[data-state=green]{background:var(--wm-g)!important}
+.wm-tile:placeholder-shown{background:var(--bg,#fff)!important;border:2px solid var(--line,#cbd5e1)!important}
+.wm-row{display:flex;flex-wrap:wrap;gap:12px}
+.wm-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.wm-btn{font:inherit;font-weight:600;min-height:44px;padding:0 18px;border-radius:9999px;border:2px solid var(--primary,#4338ca);background:var(--primary,#4338ca);color:var(--on-primary,#fff);cursor:pointer}
+.wm-btn-ghost{background:transparent;color:var(--primary,#4338ca)}
+.wm-results:empty{display:none}
+.wm-results{margin-top:16px}
+.wm-count{font-weight:700;margin:0 0 8px}
+.wm-words{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.wm-words li{background:var(--bg,#fff);border:1px solid var(--line,#e2e8f0);border-radius:8px;padding:6px 8px;font-weight:600;letter-spacing:.02em;display:flex;justify-content:space-between;align-items:baseline}
+.wm-words sub{font-size:.7rem;font-weight:400;color:var(--muted,#64748b);vertical-align:baseline}
+.wm-note{color:var(--muted,#64748b);font-size:.9rem}
+.wm-hints ol{padding-left:1.2em}
+.wm-hints summary,.wm-reveal summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+.wm-answer{font-size:2rem;font-weight:800;letter-spacing:.2em}
