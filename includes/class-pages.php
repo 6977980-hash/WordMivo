@@ -423,7 +423,18 @@ class Pages {
 			return Words::title( Words::get( $spec['x'] ) );
 		}
 		if ( 'tool' === $spec['type'] ) {
-			return self::heading( $spec ) . ' | WordMivo';
+			$titles = array(
+				'wordle-solver'        => 'Wordle Solver: Possible Answers & Best Next Guess',
+				'anagram-solver'       => 'Anagram Solver: Find Words from Letters',
+				'word-unscrambler'     => 'Word Unscrambler: Unscramble Letters into Words',
+				'scrabble-word-finder' => 'Scrabble Word Finder with Blank Tiles & Scores',
+				'todays-wordle-hints'  => "Today's Wordle Hints (Spoiler-Free)",
+				'wordle-analyzer'      => 'Wordle Analyzer: Skill & Luck Score for Your Game',
+				'spelling-bee-solver'  => 'Spelling Bee Solver: All Words & Pangrams',
+				'letter-boxed-solver'  => 'Letter Boxed Solver: Words & Two-Word Solutions',
+				'quordle-solver'       => 'Quordle & Octordle Solver: Best Next Guess',
+			);
+			return ( $titles[ $spec['x'] ] ?? self::heading( $spec ) ) . ' | WordMivo';
 		}
 		if ( 'hub' === $spec['type'] ) {
 			return "{$spec['len']} Letter Words: Finder & Full List | WordMivo";

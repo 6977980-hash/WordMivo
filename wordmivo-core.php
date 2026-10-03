@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       WordMivo Core
  * Description:       Word finder tools, word database, programmatic word-list pages and SEO for WordMivo. Ships the WordMivo theme.
- * Version:           0.3.0
+ * Version:           0.3.1
  * Requires at least: 6.6
  * Requires PHP:      8.1
  * Author:            WordMivo
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WORDMIVO_VERSION', '0.3.0' );
+define( 'WORDMIVO_VERSION', '0.3.1' );
 define( 'WORDMIVO_FILE', __FILE__ );
 define( 'WORDMIVO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WORDMIVO_URL', plugin_dir_url( __FILE__ ) );

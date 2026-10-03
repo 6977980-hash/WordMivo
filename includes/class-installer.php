@@ -34,6 +34,16 @@ class Installer {
 		if ( get_option( 'wordmivo_db_version' ) !== self::DB_VERSION ) {
 			self::create_tables();
 		}
+		// Site name and tagline (feeds, browser tabs): fill only when empty or the WordPress default.
+		if ( ! get_option( 'wordmivo_identity_set' ) ) {
+			if ( '' === trim( (string) get_option( 'blogname' ) ) ) {
+				update_option( 'blogname', 'WordMivo' );
+			}
+			if ( in_array( trim( (string) get_option( 'blogdescription' ) ), array( '', 'Just another WordPress site' ), true ) ) {
+				update_option( 'blogdescription', 'Free word finder, Wordle solver and word game tools' );
+			}
+			update_option( 'wordmivo_identity_set', 1 );
+		}
 		// Word pages arrived in 0.3.0: switch them on once; the admin can turn them off.
 		if ( ! get_option( 'wordmivo_words_set_added' ) ) {
 			$sets = Pages::enabled_sets();

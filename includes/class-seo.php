@@ -13,6 +13,8 @@ class Seo {
 
 	public static function init(): void {
 		add_filter( 'pre_get_document_title', array( __CLASS__, 'document_title' ), 20 );
+		add_filter( 'document_title_separator', static fn() => '|' );
+		add_filter( 'document_title_parts', array( __CLASS__, 'title_parts' ) );
 		add_filter( 'wp_robots', array( __CLASS__, 'robots' ) );
 		add_action( 'wp_head', array( __CLASS__, 'head' ), 2 );
 		add_filter( 'robots_txt', array( __CLASS__, 'robots_txt' ), 10, 2 );
@@ -49,6 +51,24 @@ class Seo {
 		}
 		return Pages::title( $spec );
 	}
+
+	/** "About WordMivo | WordMivo" reads badly: drop the site name when the title has it. */
+	public static function title_parts( array $parts ): array {
+		if ( isset( $parts['title'], $parts['site'] ) && false !== stripos( $parts['title'], $parts['site'] ) ) {
+			unset( $parts['site'] );
+		}
+		unset( $parts['tagline'] );
+		return $parts;
+	}
+
+	/** Hand-written descriptions for the standard pages (used unless the page has an excerpt). */
+	const PAGE_DESCRIPTIONS = array(
+		'about'            => 'WordMivo is a free, fast word finder for Wordle, Scrabble and word games: 5 letter word lists, a Wordle solver, anagram and puzzle solvers.',
+		'methodology'      => 'Where WordMivo\'s words, meanings and frequency data come from, how likely Wordle answers are chosen and how our solvers rank guesses.',
+		'contact'          => 'Contact WordMivo to report a bug, suggest a word to add or remove, or ask a question about our word tools. Email contact@wordmivo.com.',
+		'privacy-policy'   => 'How WordMivo handles your data: no accounts, tool settings stored on your device, analytics and ads only with consent, and your privacy rights.',
+		'terms-of-service' => 'The terms for using WordMivo\'s free word tools, including acceptable use, trademark notices for Wordle and Scrabble, and disclaimers.',
+	);
 
 	public static function robots( array $robots ): array {
 		$spec = Pages::current();
@@ -88,6 +108,9 @@ class Seo {
 			$post        = get_post();
 			$source      = has_excerpt( $post ) ? $post->post_excerpt : strip_shortcodes( $post->post_content );
 			$description = wp_html_excerpt( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $source ) ) ), 155, '...' );
+			if ( ! has_excerpt( $post ) && 'page' === $post->post_type && isset( self::PAGE_DESCRIPTIONS[ $post->post_name ] ) ) {
+				$description = self::PAGE_DESCRIPTIONS[ $post->post_name ];
+			}
 		}
 		$canonical = self::canonical();
 		$image     = self::asset_url( 'og.png' );

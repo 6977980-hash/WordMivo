@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+- SEO titles: keyword-rich titles for all tool pages; standard pages use "Title | WordMivo" without repeating the brand.
+- Hand-written meta descriptions for About, Methodology, Contact, Privacy Policy and Terms (a page excerpt still overrides).
+- Site name and tagline are filled once if empty or still the WordPress default.
+
 ## 0.3.0
 - Word pages at /word/{word}/: meaning (WordNet 3.0), Scrabble score, letter tiles, word facts, anagrams, words you can make, FAQ + DefinedTerm schema. Defined dictionary words are indexable; inflected forms and non-dictionary words are noindex. New sitemap (wp-sitemap-wordmivowords-N.xml), ~23k most common words. Common words on list pages link to their word page.
 - New data file data/definitions.tsv (built from WordNet 3.0; licence in data/WORDNET-LICENSE.txt) and a "defs" import stage. Needs one Start import.
