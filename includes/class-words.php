@@ -22,6 +22,9 @@ class Words {
 	/** Words in the sitemap: defined dictionary words up to this frequency rank. */
 	const SITEMAP_RANK = 60000;
 
+	/** Longest word whose page is indexed: word games (lists, Wordle, Scrabble racks) stop at 7. */
+	const INDEX_MAX_LEN = 7;
+
 	private static $cache = array();
 
 	public static function init(): void {
@@ -91,9 +94,9 @@ class Words {
 		return '';
 	}
 
-	/** Pages worth indexing: dictionary words with their own meaning. */
+	/** Pages worth indexing: game-length dictionary words with their own meaning. */
 	public static function is_indexable( object $w ): bool {
-		return $w->is_valid && ! $w->base && $w->meanings;
+		return $w->is_valid && ! $w->base && $w->meanings && $w->len <= self::INDEX_MAX_LEN;
 	}
 
 	/** Other dictionary words with exactly the same letters. */
@@ -145,8 +148,8 @@ class Words {
 
 	public static function title( object $w ): string {
 		$word = ucfirst( $w->word );
-		return $w->meanings
-			? "{$word}: Meaning, Scrabble Score & Anagrams | WordMivo"
+		return $w->is_valid
+			? "Is {$word} a Scrabble Word? Points & Anagrams | WordMivo"
 			: "Is {$word} a Word? Scrabble Score & Anagrams | WordMivo";
 	}
 
@@ -155,8 +158,9 @@ class Words {
 		$cap = ucfirst( $w->word );
 		return fit_description(
 			array(
-				$def ? sprintf( '%s means "%s".', $cap, short_text( $def, 80 ) ) : '',
-				$w->is_valid ? sprintf( '%s is a valid Scrabble word worth %d points.', $cap, $w->score ) : sprintf( '%s is not in the Scrabble dictionary we use.', $cap ),
+				$w->is_valid ? sprintf( 'Yes, %s is a valid Scrabble word worth %d points.', $cap, $w->score ) : sprintf( '%s is not in the Scrabble dictionary we use.', $cap ),
+				5 === $w->len && $w->is_likely ? 'It is a likely Wordle answer.' : '',
+				$def ? sprintf( 'It means "%s".', short_text( $def, 60 ) ) : '',
 				'See its anagrams and the words you can make from its letters.',
 			)
 		);

@@ -4,6 +4,8 @@
 - Internal links to the game pages: every word page now links to the 5 letter lists starting and ending with its first and last letter (plus its own length's lists for 3-7 letters), the 5 letter word finder, Wordle solver, word unscrambler and anagram solver. Long words used to link to no list at all.
 - Word pages: "Unscramble WORD", Wordle solver (5 letters) and 5 letter word finder links right under the intro.
 - Tool pages: A-Z grids of 5 letter words starting with and ending in each letter, like the home page.
+- Word pages of 8 or more letters are `noindex, follow` and left out of the word sitemap and IndexNow, so Google spends its crawl on game pages. They still load and pass links. Words::INDEX_MAX_LEN (7) sets the limit.
+- Word page titles lead with the game question: "Is CRANE a Scrabble Word? Points & Anagrams". Meta descriptions give the Scrabble (and likely Wordle answer) fact first, then a short meaning.
 
 ## 0.6.1
 - Family-friendly: data/blocklist.txt (profanity, sexual slang, slurs) is skipped at import and, after this deploy, removed from the word and definition tables in the background (DATA_REV 2), then likely answers, finder files and counts are rebuilt. Affects lists, finders, solvers, word pages and the sitemap.

@@ -43,7 +43,8 @@ class Sitemap {
 }
 
 /**
- * Word pages, most frequent first: defined dictionary words up to Words::SITEMAP_RANK.
+ * Word pages, most frequent first: defined dictionary words up to Words::SITEMAP_RANK
+ * and Words::INDEX_MAX_LEN letters.
  */
 class Sitemap_Words_Provider extends \WP_Sitemaps_Provider {
 
@@ -56,7 +57,7 @@ class Sitemap_Words_Provider extends \WP_Sitemaps_Provider {
 
 	private static function from(): string {
 		global $wpdb;
-		return 'FROM ' . defs_table() . ' d JOIN ' . words_table() . " w ON w.word = d.word WHERE d.base = '' AND w.is_valid = 1 AND " . $wpdb->prepare( 'w.freq_rank <= %d', Words::SITEMAP_RANK );
+		return 'FROM ' . defs_table() . ' d JOIN ' . words_table() . " w ON w.word = d.word WHERE d.base = '' AND w.is_valid = 1 AND " . $wpdb->prepare( 'w.freq_rank <= %d AND w.len <= %d', Words::SITEMAP_RANK, Words::INDEX_MAX_LEN );
 	}
 
 	public function get_url_list( $page_num, $object_subtype = '' ) {
