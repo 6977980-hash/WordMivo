@@ -23,6 +23,20 @@ class Sitemap {
 				}
 			}
 		);
+		// Thin category/tag archives are noindex (Seo::thin_term), so keep them out too.
+		add_filter(
+			'wp_sitemaps_taxonomies_query_args',
+			static function ( $args, $taxonomy ) {
+				$thin = get_terms( array( 'taxonomy' => $taxonomy, 'hide_empty' => false, 'fields' => 'ids', 'number' => 0 ) );
+				$thin = is_array( $thin ) ? array_filter( $thin, static fn( $id ) => Seo::thin_term( get_term( $id, $taxonomy ) ) ) : array();
+				if ( $thin ) {
+					$args['exclude'] = array_merge( (array) ( $args['exclude'] ?? array() ), array_values( $thin ) );
+				}
+				return $args;
+			},
+			10,
+			2
+		);
 		// One-author site: author archives redirect to /about/, so keep them out of the sitemap.
 		add_filter( 'wp_sitemaps_add_provider', static fn( $provider, $name ) => 'users' === $name ? false : $provider, 10, 2 );
 	}

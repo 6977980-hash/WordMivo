@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.3
+- Guides on the home page: a "Wordle guides" section with the 3 latest posts (title + excerpt) and a link to all guides once there are more.
+- "Guides" in the main menu (when the Wordle Guides category has posts) and a "Wordle guides" footer group with the 5 latest posts.
+- Category and tag archives with fewer than 5 posts are `noindex, follow` and left out of the sitemap (Seo::MIN_TERM_POSTS).
+
 ## 0.6.2
 - Internal links to the game pages: every word page now links to the 5 letter lists starting and ending with its first and last letter (plus its own length's lists for 3-7 letters), the 5 letter word finder, Wordle solver, word unscrambler and anagram solver. Long words used to link to no list at all.
 - Word pages: "Unscramble WORD", Wordle solver (5 letters) and 5 letter word finder links right under the intro.

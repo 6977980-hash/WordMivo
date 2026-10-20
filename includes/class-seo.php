@@ -83,11 +83,19 @@ class Seo {
 			$robots['noindex'] = true;
 			$robots['follow']  = true;
 		}
-		if ( is_search() ) {
+		if ( is_search() || ( ( is_category() || is_tag() ) && self::thin_term( get_queried_object() ) ) ) {
 			$robots['noindex'] = true;
+			$robots['follow']  = true;
 		}
 		$robots['max-image-preview'] = 'large';
 		return $robots;
+	}
+
+	/** Category and tag archives stay out of the index until they list enough posts. */
+	const MIN_TERM_POSTS = 5;
+
+	public static function thin_term( $term ): bool {
+		return $term instanceof \WP_Term && $term->count < self::MIN_TERM_POSTS;
 	}
 
 	private static function canonical(): string {

@@ -103,6 +103,25 @@ get_header();
 	</section>
 	<?php endif; ?>
 
+	<?php $guides = ! empty( $spec['home'] ) ? get_posts( array( 'numberposts' => 3, 'post_status' => 'publish' ) ) : array(); ?>
+	<?php if ( $guides ) : ?>
+	<section class="wm-section wm-guides" aria-labelledby="wm-guides">
+		<h2 id="wm-guides">Wordle guides</h2>
+		<?php foreach ( $guides as $guide ) : ?>
+			<article class="wm-entry">
+				<h3><a href="<?php echo esc_url( get_permalink( $guide ) ); ?>"><?php echo esc_html( get_the_title( $guide ) ); ?></a></h3>
+				<?php if ( has_excerpt( $guide ) ) : ?>
+					<p><?php echo esc_html( get_the_excerpt( $guide ) ); ?></p>
+				<?php endif; ?>
+			</article>
+		<?php endforeach; ?>
+		<?php $cat = get_category_by_slug( 'wordle-guides' ); ?>
+		<?php if ( $cat && $cat->count > count( $guides ) ) : ?>
+			<p><a href="<?php echo esc_url( get_category_link( $cat ) ); ?>">All Wordle guides</a></p>
+		<?php endif; ?>
+	</section>
+	<?php endif; ?>
+
 	<?php echo Ads::slot( 'bottom' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in Ads::slot(). ?>
 
 	<?php $faq = Pages::faq( $spec ); ?>

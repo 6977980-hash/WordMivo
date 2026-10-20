@@ -67,6 +67,10 @@ function wordmivo_default_nav(): void {
 		'Wordle Solver' => home_url( '/wordle-solver/' ),
 		'Unscrambler'   => home_url( '/word-unscrambler/' ),
 	);
+	$guides = get_category_by_slug( 'wordle-guides' );
+	if ( $guides && $guides->count > 0 ) {
+		$links['Guides'] = get_category_link( $guides );
+	}
 	echo '<ul>';
 	foreach ( $links as $label => $url ) {
 		printf( '<li><a href="%s">%s</a></li>', esc_url( $url ), esc_html( $label ) );
@@ -101,6 +105,9 @@ function wordmivo_footer_links(): void {
 	}
 	foreach ( WordMivo\Pages::TOOLS as $slug => $name ) {
 		$groups['Tools'][ $name ] = WordMivo\Pages::url( array( 'type' => 'tool', 'x' => $slug ) );
+	}
+	foreach ( get_posts( array( 'numberposts' => 5, 'post_status' => 'publish' ) ) as $guide ) {
+		$groups['Wordle guides'][ get_the_title( $guide ) ] = get_permalink( $guide );
 	}
 	foreach ( range( 'a', 'z' ) as $l ) {
 		$spec = WordMivo\Pages::normalize( array( 'type' => 'starts', 'len' => 5, 'x' => $l ) );
