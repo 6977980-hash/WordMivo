@@ -22,7 +22,11 @@ class Words {
 	/** Words in the sitemap: defined dictionary words up to this frequency rank. */
 	const SITEMAP_RANK = 60000;
 
-	/** Longest word whose page is indexed: word games (lists, Wordle, Scrabble racks) stop at 7. */
+	/**
+	 * Word pages are noindex, follow and out of the sitemap (owner's call, 2026-10-20): Google
+	 * should spend its crawl on lists, tools and guides. Set true to index words up to INDEX_MAX_LEN.
+	 */
+	const INDEX_PAGES   = false;
 	const INDEX_MAX_LEN = 7;
 
 	private static $cache = array();
@@ -94,9 +98,9 @@ class Words {
 		return '';
 	}
 
-	/** Pages worth indexing: game-length dictionary words with their own meaning. */
+	/** Pages worth indexing (when INDEX_PAGES): game-length dictionary words with their own meaning. */
 	public static function is_indexable( object $w ): bool {
-		return $w->is_valid && ! $w->base && $w->meanings && $w->len <= self::INDEX_MAX_LEN;
+		return self::INDEX_PAGES && $w->is_valid && ! $w->base && $w->meanings && $w->len <= self::INDEX_MAX_LEN;
 	}
 
 	/** Other dictionary words with exactly the same letters. */

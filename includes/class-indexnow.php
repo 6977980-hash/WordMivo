@@ -72,7 +72,7 @@ class IndexNow {
 		foreach ( Sitemap::urls() as $u ) {
 			$urls[] = $u['loc'];
 		}
-		if ( in_array( 'words', Pages::enabled_sets(), true ) ) {
+		if ( Words::INDEX_PAGES && in_array( 'words', Pages::enabled_sets(), true ) ) {
 			$provider = new Sitemap_Words_Provider();
 			for ( $page = 1, $max = $provider->get_max_num_pages(); $page <= $max; $page++ ) {
 				foreach ( $provider->get_url_list( $page ) as $u ) {

@@ -17,7 +17,7 @@ class Sitemap {
 			static function () {
 				if ( function_exists( 'wp_register_sitemap_provider' ) ) {
 					wp_register_sitemap_provider( 'wordmivo', new Sitemap_Provider() );
-					if ( in_array( 'words', Pages::enabled_sets(), true ) ) {
+					if ( Words::INDEX_PAGES && in_array( 'words', Pages::enabled_sets(), true ) ) {
 						wp_register_sitemap_provider( 'wordmivowords', new Sitemap_Words_Provider() );
 					}
 				}

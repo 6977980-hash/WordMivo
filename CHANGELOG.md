@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.4
+- All word pages (/word/x/) are now `noindex, follow`; the word sitemaps (wp-sitemap-wordmivowords-*.xml) and their IndexNow submissions are off. Pages still load and link as before. The index keeps lists, tools, standard pages, the home page and guide posts (about 269 URLs). Words::INDEX_PAGES turns word indexing back on.
+
 ## 0.6.3
 - Guides on the home page: a "Wordle guides" section with the 3 latest posts (title + excerpt) and a link to all guides once there are more.
 - "Guides" in the main menu (when the Wordle Guides category has posts) and a "Wordle guides" footer group with the 5 latest posts.
