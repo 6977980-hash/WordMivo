@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+- Internal links to the game pages: every word page now links to the 5 letter lists starting and ending with its first and last letter (plus its own length's lists for 3-7 letters), the 5 letter word finder, Wordle solver, word unscrambler and anagram solver. Long words used to link to no list at all.
+- Word pages: "Unscramble WORD", Wordle solver (5 letters) and 5 letter word finder links right under the intro.
+- Tool pages: A-Z grids of 5 letter words starting with and ending in each letter, like the home page.
+
 ## 0.6.1
 - Family-friendly: data/blocklist.txt (profanity, sexual slang, slurs) is skipped at import and, after this deploy, removed from the word and definition tables in the background (DATA_REV 2), then likely answers, finder files and counts are rebuilt. Affects lists, finders, solvers, word pages and the sitemap.
 - Dataset regenerated: 8,602 five-letter words, 2,130 likely answers, starting words re-ranked (RAISE still #1). Methodology page explains the filter (PAGES_VERSION 6).

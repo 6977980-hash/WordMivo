@@ -68,6 +68,14 @@ get_header();
 		?>
 	</p>
 
+	<p class="wm-word-actions">
+		<a href="<?php echo esc_url( add_query_arg( 'letters', $word, Pages::url( array( 'type' => 'tool', 'x' => 'word-unscrambler' ) ) ) ); ?>">Unscramble <?php echo esc_html( $upper ); ?></a>
+		<?php if ( 5 === $w->len ) : ?>
+			<span aria-hidden="true">·</span> <a href="<?php echo esc_url( Pages::url( array( 'type' => 'tool', 'x' => 'wordle-solver' ) ) ); ?>">Wordle solver</a>
+		<?php endif; ?>
+		<span aria-hidden="true">·</span> <a href="<?php echo esc_url( Pages::url( array( 'type' => 'hub', 'len' => 5 ) ) ); ?>">5 letter word finder</a>
+	</p>
+
 	<section class="wm-section wm-prose" aria-labelledby="wm-meaning">
 		<h2 id="wm-meaning">What does <?php echo esc_html( $word ); ?> mean?</h2>
 		<?php if ( $w->base ) : ?>
@@ -140,7 +148,6 @@ get_header();
 				<li><?php echo $word_link( $x ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in $word_link. ?></li>
 			<?php endforeach; ?>
 		</ul>
-		<p><a href="<?php echo esc_url( add_query_arg( 'letters', $word, Pages::url( array( 'type' => 'tool', 'x' => 'word-unscrambler' ) ) ) ); ?>">Unscramble <?php echo esc_html( $upper ); ?> for every word</a></p>
 	</section>
 	<?php endif; ?>
 
@@ -155,15 +162,25 @@ get_header();
 	</section>
 
 	<?php
+	// Game lists for this word's length, then 5 letters (the most searched lists) for every word.
 	$related = array();
-	foreach ( array( 'starts' => array( $word[0], 'starting with' ), 'ends' => array( substr( $word, -1 ), 'ending in' ) ) as $type => $info ) {
-		$s = Pages::normalize( array( 'type' => $type, 'len' => $w->len, 'x' => $info[0] ) );
-		if ( Pages::is_served( $s ) && Pages::count( $s ) > 0 ) {
-			$related[ sprintf( '%d letter words %s %s', $w->len, $info[1], strtoupper( $info[0] ) ) ] = Pages::url( $s );
+	foreach ( array_unique( array( $w->len, 5 ) ) as $n ) {
+		foreach ( array( 'starts' => array( $word[0], 'starting with' ), 'ends' => array( substr( $word, -1 ), 'ending in' ) ) as $type => $info ) {
+			$s = Pages::normalize( array( 'type' => $type, 'len' => $n, 'x' => $info[0] ) );
+			if ( Pages::is_served( $s ) && Pages::count( $s ) > 0 ) {
+				$related[ sprintf( '%d letter words %s %s', $n, $info[1], strtoupper( $info[0] ) ) ] = Pages::url( $s );
+			}
 		}
 	}
-	if ( $in_hub ) {
+	if ( $in_hub && 5 !== $w->len ) {
 		$related[ "{$w->len} letter word finder" ] = Pages::url( $hub );
+	}
+	$related['5 letter word finder'] = Pages::url( array( 'type' => 'hub', 'len' => 5 ) );
+	foreach ( array( 'wordle-solver', 'word-unscrambler', 'anagram-solver' ) as $tool ) {
+		$s = Pages::normalize( array( 'type' => 'tool', 'x' => $tool ) );
+		if ( Pages::is_served( $s ) ) {
+			$related[ Pages::TOOLS[ $tool ] ] = Pages::url( $s );
+		}
 	}
 	foreach ( array_merge( $near['prev'], $near['next'] ) as $x ) {
 		$related[ $x ] = Words::url( $x );

@@ -632,17 +632,19 @@ class Pages {
 				$groups[ 'Related lists' ] = $links;
 			}
 		}
-		if ( 'hub' === $spec['type'] ) {
+		// A-Z grids: the hub's own length, and 5 letters on tool pages (the lists people search most).
+		if ( 'hub' === $spec['type'] || 'tool' === $spec['type'] ) {
+			$n = 'tool' === $spec['type'] ? 5 : $len;
 			foreach ( array( 'starts' => 'Starting with', 'ends' => 'Ending in' ) as $type => $label ) {
 				$links = array();
 				foreach ( range( 'a', 'z' ) as $l ) {
-					$s = self::normalize( array( 'type' => $type, 'len' => $len, 'x' => $l ) );
+					$s = self::normalize( array( 'type' => $type, 'len' => $n, 'x' => $l ) );
 					if ( self::is_served( $s ) && self::count( $s ) > 0 ) {
 						$links[ strtoupper( $l ) ] = self::url( $s );
 					}
 				}
 				if ( $links ) {
-					$groups[ "{$len} letter words {$label}" ] = $links;
+					$groups[ "{$n} letter words {$label}" ] = $links;
 				}
 			}
 		}
