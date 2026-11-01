@@ -51,6 +51,14 @@ get_header();
 				$top2 ? esc_html( sprintf( 'The most frequent %s letter is %s.', 'starts' === $spec['type'] ? 'next' : 'first', $top2 ) ) : '',
 				$words['likely'] ? 'likely Wordle answers' : 'common English words'
 			);
+			if ( in_array( $spec['type'], array( 'starts', 'ends' ), true ) ) {
+				printf(
+					' This page lists all the %1$s letter words that %2$s with %3$s.',
+					esc_html( $len ),
+					'starts' === $spec['type'] ? 'start' : 'end',
+					esc_html( strtoupper( $spec['x'] ) )
+				);
+			}
 		}
 		?>
 	</p>
