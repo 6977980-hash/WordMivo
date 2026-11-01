@@ -648,6 +648,17 @@ class Pages {
 				}
 			}
 		}
+		// Home page: long-tail lists already close to page 1 in Search Console.
+		if ( ! empty( $spec['home'] ) ) {
+			$links = array();
+			foreach ( array( array( 'ends', 6, 's' ), array( 'starts', 7, 'b' ), array( 'starts', 4, 'm' ), array( 'ends', 6, 't' ), array( 'starts', 6, 'l' ), array( 'starts', 6, 'f' ) ) as $p ) {
+				$s = self::normalize( array( 'type' => $p[0], 'len' => $p[1], 'x' => $p[2] ) );
+				if ( self::is_served( $s ) ) {
+					$links[ self::heading( $s ) ] = self::url( $s );
+				}
+			}
+			$groups['Popular word lists'] = $links;
+		}
 		$hubs = array();
 		for ( $n = MIN_LEN; $n <= MAX_LEN; $n++ ) {
 			$s = self::normalize( array( 'type' => 'hub', 'len' => $n ) );
