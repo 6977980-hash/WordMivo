@@ -54,7 +54,7 @@ class Seo {
 			return $title;
 		}
 		if ( ! empty( $spec['home'] ) ) {
-			return '5 Letter Words: Word Finder for Wordle & Word Games | WordMivo';
+			return '5 Letter Word Finder for Wordle & Word Games | WordMivo';
 		}
 		return Pages::title( $spec );
 	}
