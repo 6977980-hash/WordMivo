@@ -910,8 +910,8 @@
 				var ol = el('ol', 'wm-answers');
 				words.forEach(function (w) {
 					var li = el('li');
-					var a = el('a', '', w[0].toUpperCase());
-					a.href = form.dataset.words + w[0] + '/';
+					var a = el(form.dataset.words ? 'a' : 'strong', '', w[0].toUpperCase());
+					if (form.dataset.words) { a.href = form.dataset.words + w[0] + '/'; }
 					li.appendChild(a);
 					if (w[1]) { li.appendChild(el('span', 'wm-note', ' ' + w[1])); }
 					ol.appendChild(li);

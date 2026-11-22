@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.5
+- Word pages retired: every /word/x/ URL now answers **410 Gone** with a small noindex page linking to the word finder and solvers. Google crawled our lists, tools and guides on 8-10 Nov and left most of them "Crawled - currently not indexed" while ~12.7K noindexed word pages stayed indexed, so the thin pages are now removed outright (a GSC temporary removal for the /word/ prefix was filed on 23 Nov). Words::GONE brings them back.
+- Nothing links to word pages any more: list pages, the best starting words table, Word of the Day and the crossword clue solver show plain words; the REST word lookup returns `url: null`.
+- The page cache (LiteSpeed) is purged once after each plugin version change.
+
 ## 0.6.4
 - All word pages (/word/x/) are now `noindex, follow`; the word sitemaps (wp-sitemap-wordmivowords-*.xml) and their IndexNow submissions are off. Pages still load and link as before. The index keeps lists, tools, standard pages, the home page and guide posts (about 269 URLs). Words::INDEX_PAGES turns word indexing back on.
 

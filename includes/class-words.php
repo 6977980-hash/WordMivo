@@ -29,10 +29,23 @@ class Words {
 	const INDEX_PAGES   = false;
 	const INDEX_MAX_LEN = 7;
 
+	/**
+	 * Word pages are retired (owner's call, 2026-11-23): /word/x/ answers 410 Gone and nothing
+	 * links to it, so Google drops the ~12K thin pages that dragged the whole site down after
+	 * 30 Oct. Word data still powers the tools. Set false to bring the pages back.
+	 */
+	const GONE = true;
+
 	private static $cache = array();
 
 	public static function init(): void {
 		add_action( 'init', static fn() => add_rewrite_rule( '^word/([a-z]{2,15})/?$', 'index.php?wm_type=word&wm_x=$matches[1]', 'top' ) );
+	}
+
+	/** Link to a word page, or plain escaped text while word pages are gone. */
+	public static function link( string $word, string $text = '' ): string {
+		$text = esc_html( '' === $text ? $word : $text );
+		return self::GONE ? $text : '<a href="' . esc_url( self::url( $word ) ) . '">' . $text . '</a>';
 	}
 
 	public static function url( string $word ): string {
@@ -143,7 +156,7 @@ class Words {
 	 */
 	public static function linkable( array $words ): array {
 		global $wpdb;
-		if ( ! $words || ! in_array( 'words', Pages::enabled_sets(), true ) ) {
+		if ( self::GONE || ! $words || ! in_array( 'words', Pages::enabled_sets(), true ) ) {
 			return array();
 		}
 		$in = implode( ',', array_map( static fn( $w ) => $wpdb->prepare( '%s', $w ), $words ) );

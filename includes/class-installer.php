@@ -36,6 +36,18 @@ class Installer {
 		if ( PAGES_VERSION !== (string) get_option( 'wordmivo_pages_created' ) ) {
 			add_action( 'init', __NAMESPACE__ . '\\create_standard_pages', 20 );
 		}
+		// Purge the page cache once per plugin version, so cached pages pick up template changes
+		// (0.6.5: word pages turn into 410 Gone and lists stop linking to them).
+		if ( WORDMIVO_VERSION !== (string) get_option( 'wordmivo_purged_version' ) ) {
+			add_action(
+				'init',
+				static function () {
+					do_action( 'litespeed_purge_all' );
+					update_option( 'wordmivo_purged_version', WORDMIVO_VERSION, false );
+				},
+				99
+			);
+		}
 		if ( get_option( 'wordmivo_db_version' ) !== self::DB_VERSION ) {
 			self::create_tables();
 		}

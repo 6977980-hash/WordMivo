@@ -356,7 +356,7 @@ class Rest {
 				'meanings'       => $w->meanings,
 				'synonyms'       => Words::synonyms( $defs ),
 				'anagrams'       => Words::anagrams( $w ),
-				'url'            => Words::url( $word ),
+				'url'            => Words::GONE ? null : Words::url( $word ),
 			)
 		);
 	}

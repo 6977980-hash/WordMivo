@@ -225,10 +225,34 @@ class Pages {
 			wp_safe_redirect( home_url( '/' . self::RETIRED[ $path ] . '/' ), 301 );
 			exit;
 		}
+		if ( Words::GONE && preg_match( '#^word(/|$)#', $path ) ) {
+			self::gone();
+		}
 		if ( preg_match( '#^word/([A-Za-z]{2,15})$#', $path, $m ) && strtolower( $m[1] ) !== $m[1] ) {
 			wp_safe_redirect( Words::url( strtolower( $m[1] ) ), 301 );
 			exit;
 		}
+	}
+
+	/** 410 Gone for retired word pages: a tiny noindex page that points people to the tools. */
+	public static function gone(): void {
+		status_header( 410 );
+		nocache_headers();
+		header( 'X-Robots-Tag: noindex, follow' );
+		header( 'Content-Type: text/html; charset=utf-8' );
+		$links = array(
+			home_url( '/' )                  => '5 Letter Word Finder',
+			home_url( '/wordle-solver/' )    => 'Wordle Solver',
+			home_url( '/anagram-solver/' )   => 'Anagram Solver',
+			home_url( '/word-unscrambler/' ) => 'Word Unscrambler',
+		);
+		echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, follow"><title>Page removed | WordMivo</title></head>'
+			. '<body style="font-family:system-ui,sans-serif;max-width:40rem;margin:3rem auto;padding:0 1rem;line-height:1.6"><h1>This word page has been removed</h1><p>Look the word up with one of our tools instead:</p><ul>';
+		foreach ( $links as $url => $label ) {
+			echo '<li><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></li>';
+		}
+		echo '</ul></body></html>';
+		exit;
 	}
 
 	public static function template_redirect(): void {
@@ -255,6 +279,9 @@ class Pages {
 		if ( 'hub' === $spec['type'] && 5 === $spec['len'] && get_option( 'wordmivo_home_finder', 1 ) ) {
 			wp_safe_redirect( home_url( '/' ), 301 );
 			exit;
+		}
+		if ( 'word' === $spec['type'] && Words::GONE ) {
+			self::gone();
 		}
 		if ( ! self::is_served( $spec ) || ( ! in_array( $spec['type'], array( 'tool', 'hub', 'word' ), true ) && 0 === self::count( $spec ) ) ) {
 			global $wp_query;

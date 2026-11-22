@@ -252,7 +252,7 @@ class Shortcodes {
 			return '<p class="wm-note">The word of the day appears once the word database is ready.</p>';
 		}
 		$html = '<article class="wm-tool wm-wotd"><p class="wm-date">' . esc_html( wp_date( 'l, F j, Y', strtotime( (string) key( $days ) ) ) ) . '</p>'
-			. '<p class="wm-wotd-word"><a href="' . esc_url( Words::url( $word ) ) . '">' . esc_html( $word ) . '</a></p>';
+			. '<p class="wm-wotd-word">' . Words::link( $word ) . '</p>';
 		foreach ( $w->meanings as $pos => $senses ) {
 			$html .= '<p><em>' . esc_html( $pos ) . '</em>: ' . esc_html( $senses[0][0] ) . '</p>';
 			if ( $senses[0][1] ) {
@@ -260,12 +260,12 @@ class Shortcodes {
 			}
 			break;
 		}
-		$html .= '<p>' . esc_html( sprintf( '%d letters, %d points in Scrabble.', $w->len, $w->score ) ) . ' <a href="' . esc_url( Words::url( $word ) ) . '">' . esc_html( 'More about ' . $word ) . '</a></p></article>';
+		$html .= '<p>' . esc_html( sprintf( '%d letters, %d points in Scrabble.', $w->len, $w->score ) ) . ( Words::GONE ? '' : ' ' . Words::link( $word, 'More about ' . $word ) ) . '</p></article>';
 		$past  = array_slice( $days, 1, 60, true );
 		if ( $past ) {
 			$html .= '<h2>Previous words of the day</h2><ul class="wm-wotd-list">';
 			foreach ( $past as $date => $x ) {
-				$html .= '<li><span>' . esc_html( wp_date( 'M j, Y', strtotime( $date ) ) ) . '</span> <a href="' . esc_url( Words::url( $x ) ) . '">' . esc_html( $x ) . '</a></li>';
+				$html .= '<li><span>' . esc_html( wp_date( 'M j, Y', strtotime( $date ) ) ) . '</span> ' . Words::link( $x ) . '</li>';
 			}
 			$html .= '</ul>';
 		}
@@ -275,7 +275,7 @@ class Shortcodes {
 	/** Crossword clue solver / reverse dictionary. */
 	public static function clue(): string {
 		self::$needs_assets = true;
-		return '<form class="wm-tool wm-clue" data-wm="clue" data-words="' . esc_attr( home_url( '/word/' ) ) . '" role="search">'
+		return '<form class="wm-tool wm-clue" data-wm="clue" data-words="' . ( Words::GONE ? '' : esc_attr( home_url( '/word/' ) ) ) . '" role="search">'
 			. '<label>Clue or meaning<input type="text" name="clue" maxlength="120" autocomplete="off" placeholder="e.g. large wading bird"></label>'
 			. '<div class="wm-row">' . self::text_input( 'pattern', 'Answer length or pattern', 15, 'e.g. 5 or c???e', ' required' ) . '</div>'
 			. '<p class="wm-note">Use ? for unknown letters. Type just a number if you only know the length.</p>'
